@@ -23,6 +23,7 @@ from framework.workload.AIoTBenchWorkload import *
 from simulator.Simulator import *
 from simulator.environment.AzureFog import *
 from simulator.environment.BitbrainFog import *
+from simulator.environment.MyFog import *
 from simulator.workload.BitbrainWorkload2 import *
 from simulator.workload.Azure2017Workload import *
 from simulator.workload.Azure2019Workload import *
@@ -50,6 +51,7 @@ from scheduler.HGOBI import HGOBIScheduler
 from scheduler.HGOBI2 import HGOBI2Scheduler
 from scheduler.HSOGOBI import HSOGOBIScheduler
 from scheduler.HSOGOBI2 import HSOGOBI2Scheduler
+from scheduler.zDetectionScheduler import DetectionScheduler
 
 # Auxiliary imports
 from stats.Stats import *
@@ -66,13 +68,17 @@ parser.add_option("-m", "--mode", action="store", dest="mode", default="0",
 opts, args = parser.parse_args()
 
 # Global constants
-NUM_SIM_STEPS = 100
-HOSTS = 10 * 5 if opts.env == '' else 10
+NUM_SIM_STEPS = 20
+#HOSTS = 10 * 5 if opts.env == '' else 10
+HOSTS =  10
+
 CONTAINERS = HOSTS
 TOTAL_POWER = 1000
 ROUTER_BW = 10000
 INTERVAL_TIME = 300 # seconds
-NEW_CONTAINERS = 0 if HOSTS == 10 else 5
+#NEW_CONTAINERS = 0 if HOSTS == 10 else 5
+NEW_CONTAINERS = 0
+
 DB_NAME = ''
 DB_HOST = ''
 DB_PORT = 0
@@ -92,7 +98,8 @@ def initalizeEnvironment(environment, logger):
 	if environment != '':
 		datacenter = Datacenter(HOSTS_IP, environment, 'Virtual')
 	else:
-		datacenter = AzureFog(HOSTS)
+		#datacenter = AzureFog(HOSTS)
+		datacenter = MyFog(HOSTS)
 
 	# Initialize workload
 	''' Can be SWSD, BWGD2, Azure2017Workload, Azure2019Workload // DFW, AIoTW '''
@@ -103,7 +110,8 @@ def initalizeEnvironment(environment, logger):
 	
 	# Initialize scheduler
 	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
-	scheduler = GOBIScheduler('energy_latency_'+str(HOSTS)) # GOBIScheduler('energy_latency_'+str(HOSTS))
+	#scheduler = GOBIScheduler('energy_latency_'+str(HOSTS)) # GOBIScheduler('energy_latency_'+str(HOSTS))
+	scheduler = DetectionScheduler()
 
 	# Initialize Environment
 	hostlist = datacenter.generateHosts()

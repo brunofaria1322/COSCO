@@ -137,3 +137,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 todo.txt
+
+# Datasets
+vm_cpu_readings-file-1-of-195.csv.gz
