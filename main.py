@@ -24,9 +24,11 @@ from simulator.Simulator import *
 from simulator.environment.AzureFog import *
 from simulator.environment.BitbrainFog import *
 from simulator.environment.MyFog import *
+
 from simulator.workload.BitbrainWorkload2 import *
 from simulator.workload.Azure2017Workload import *
 from simulator.workload.Azure2019Workload import *
+from simulator.workload.MyBitbrainWorkload import *
 
 # Scheduler imports
 from scheduler.IQR_MMT_Random import IQRMMTRScheduler
@@ -106,7 +108,8 @@ def initalizeEnvironment(environment, logger):
 	if environment != '':
 		workload = DFW(NEW_CONTAINERS, 1.5, db)
 	else: 
-		workload = BWGD2(NEW_CONTAINERS, 1.5)
+		#workload = BWGD2(NEW_CONTAINERS, 1.5)
+		workload = MyBW(NEW_CONTAINERS, 1.5)
 	
 	# Initialize scheduler
 	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
