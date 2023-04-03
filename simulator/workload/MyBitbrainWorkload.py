@@ -38,7 +38,7 @@ class MyBW(Workload):
 		self.possible_indices = []
 		for i in range(1, 500):
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
-			if (ips_multiplier*df['CPU usage [MHZ]']).to_list()[10] < 3000 and (ips_multiplier*df['CPU usage [MHZ]']).to_list()[10] > 500:
+			if 500 < (ips_multiplier*df['CPU usage [MHZ]']).to_list()[10] < 3000:
 				self.possible_indices.append(i)			
 
 	def generateNewContainers(self, interval):
