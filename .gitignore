@@ -13,7 +13,6 @@ modstat.py
 
 # C extensions
 *.so
-logs/
 
 # Distribution / packaging
 .Python

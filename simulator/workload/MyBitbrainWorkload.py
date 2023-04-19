@@ -17,6 +17,7 @@ ips_multiplier = 2054.0 / (2 * 600)
 
 class MyBW(Workload):
 	def __init__(self, numContainers):
+		super().__init__()
 		self.num = numContainers
 		dataset_path = 'simulator/workload/datasets/bitbrain/'
 		if not path.exists(dataset_path):
