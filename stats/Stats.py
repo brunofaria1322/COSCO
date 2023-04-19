@@ -15,6 +15,8 @@ class Stats():
 		self.scheduler = Scheduler
 		self.simulated_scheduler = GOBIScheduler('energy_latency_'+str(self.datacenter.num_hosts))
 		self.simulated_scheduler.env = self.env
+		self.time_series = np.zeros((1,3 * len(self.env.hostlist))) # 3 dims: cpu, ram-size, disk-size
+		self.schedule_series = np.zeros((1, len(self.env.containerlist), len(self.env.hostlist)))
 		self.initStats()
 
 	def initStats(self):	
@@ -39,6 +41,11 @@ class Stats():
 		hostinfo['ramavailable'] = [host.getRAMAvailable() for host in self.env.hostlist]
 		hostinfo['disk'] = [host.getCurrentDisk() for host in self.env.hostlist]
 		hostinfo['diskavailable'] = [host.getDiskAvailable() for host in self.env.hostlist]
+		cpulist, ramlist, disklist = hostinfo['cpu'], [i[0] for i in hostinfo['ram']], [i[0] for i in hostinfo['disk']]
+		datapoint = np.concatenate([[cpulist[i], ramlist[i], disklist[i]] for i in range(len(cpulist))]).reshape(1, -1)
+		self.time_series = np.append(self.time_series, datapoint, axis=0)
+		datapoint = np.array([self.env.scheduler.result_cache])
+		self.schedule_series = np.append(self.schedule_series, datapoint, axis=0)
 		self.hostinfo.append(hostinfo)
 
 	def saveWorkloadInfo(self, deployed, migrations):
@@ -96,10 +103,10 @@ class Stats():
 		metrics['avgresponsetime'] = np.average(metrics['responsetime']) if len(destroyed) > 0 else 0
 		metrics['migrationtime'] = [c.totalMigrationTime for c in destroyed]
 		metrics['avgmigrationtime'] = np.average(metrics['migrationtime']) if len(destroyed) > 0 else 0
-		metrics['slaviolations'] = len(np.where([c.destroyAt > c.sla for c in destroyed])[0])
+		metrics['slaviolations'] = len(np.where([c.destroyAt > c.sla for c in destroyed]))
 		metrics['slaviolationspercentage'] = metrics['slaviolations'] * 100.0 / len(destroyed) if len(destroyed) > 0 else 0
 		metrics['waittime'] = [c.startAt - c.createAt for c in destroyed]
-		#metrics['energytotalinterval_pred'], metrics['avgresponsetime_pred'] = self.runSimulationGOBI()
+		# metrics['energytotalinterval_pred'], metrics['avgresponsetime_pred'] = self.runSimulationGOBI()
 		self.metrics.append(metrics)
 
 	def saveSchedulerInfo(self, selectedcontainers, decision, schedulingtime):
@@ -226,6 +233,14 @@ class Stats():
 		df = pd.DataFrame(metric_with_interval, columns=headers)
 		df.to_csv(dirname + '/' + title + '.csv', index=False)
 
+	def generateTimeSeriesDataset(self, dirname):
+		title = 'time_series'
+		np.save(f'{dirname}/time_series.npy', self.time_series)
+		np.save(f'{dirname}/schedule_series.npy', self.schedule_series)
+		headers = np.concatenate([[f'cpu_{i}', f'ram_{i}', f'disk_{i}'] for i in range(len(self.env.hostlist))])
+		df = pd.DataFrame(self.time_series, columns=headers)
+		df.to_csv(dirname + '/' + title + '.csv', index=False)
+
 	def generateDatasetWithInterval(self, dirname, metric, objfunc, metric2=None, objfunc2=None):
 		title = metric + '_' + (metric2 + '_' if metric2 else "") + (objfunc + '_' if objfunc else "") + (objfunc2 + '_' if objfunc2 else "") + 'with_interval' 
 		totalIntervals = len(self.hostinfo)
@@ -272,20 +287,21 @@ class Stats():
 		df.to_csv(dirname + '/' + title + '.csv' , header=False, index=False)
 
 	def generateGraphs(self, dirname):
-		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'cpu')
-		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'numcontainers')
-		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'power')
-		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'baseips', 'apparentips')
-		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ipscap', 'apparentips')
-		self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'ips', 'apparentips')
-		self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'hostalloc')
-		self.generateMetricsWithInterval(dirname)
-		self.generateWorkloadWithInterval(dirname)
+		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'cpu')
+		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'numcontainers')
+		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'power')
+		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'baseips', 'apparentips')
+		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ipscap', 'apparentips')
+		# self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'ips', 'apparentips')
+		# self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'hostalloc')
+		# self.generateMetricsWithInterval(dirname)
+		# self.generateWorkloadWithInterval(dirname)
+		self.generateTimeSeriesDataset(dirname)
 
 	def generateDatasets(self, dirname):
 		# self.generateDatasetWithInterval(dirname, 'cpu', objfunc='energytotalinterval')
 		self.generateDatasetWithInterval(dirname, 'cpu', metric2='apparentips', objfunc='energytotalinterval', objfunc2='avgresponsetime')
-		self.generateDatasetWithInterval2(dirname, 'cpu', 'apparentips', 'energytotalinterval_pred', 'avgresponsetime_pred', objfunc='energytotalinterval', objfunc2='avgresponsetime')
+		# self.generateDatasetWithInterval2(dirname, 'cpu', 'apparentips', 'energytotalinterval_pred', 'avgresponsetime_pred', objfunc='energytotalinterval', objfunc2='avgresponsetime')
 		
 	def generateCompleteDatasets(self, dirname):
 		self.generateCompleteDataset(dirname, self.hostinfo, 'hostinfo')
