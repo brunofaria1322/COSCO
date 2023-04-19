@@ -182,7 +182,7 @@ def saveStats(stats, datacenter, workload, env, end=True):
 	    pickle.dump(stats, handle)
 
 if __name__ == '__main__':
-	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(env, logger)
+	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment()
 
 	for step in range(NUM_SIM_STEPS):
 		print(color.BOLD+"Simulation Interval:", step, color.ENDC)
