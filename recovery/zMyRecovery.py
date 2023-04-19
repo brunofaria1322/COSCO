@@ -9,10 +9,10 @@ from .PreGANSrc.src.utils import *
 from .PreGANSrc.src.train import *
 
 class MyRecovery(Recovery):
-    def __init__(self, hosts, env, training = False):
+    def __init__(self, hosts, training = False):
         super().__init__()
         self.hosts = hosts
-        self.env_name = 'simulator' if env == '' else 'framework'
+        self.env_name = 'simulator'
         self.training = training
 
     def run_model(self, time_series, original_decision):
