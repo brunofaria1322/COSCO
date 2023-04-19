@@ -12,6 +12,8 @@ import warnings
 from utils.ColorUtils import color
 warnings.simplefilter("ignore")
 
+from tqdm import tqdm
+
 # Intel Pentium III gives 2054 MIPS at 600 MHz
 # Source: https://archive.vn/20130205075133/http://www.tomshardware.com/charts/cpu-charts-2004/Sandra-CPU-Dhrystone,449.html
 ips_multiplier = 2054.0 / (2 * 600)

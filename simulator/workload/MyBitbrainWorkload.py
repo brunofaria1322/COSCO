@@ -38,12 +38,14 @@ class MyBW(Workload):
 		self.possible_indices = []
 		for i in range(1, 500):
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
-			if 500 < (ips_multiplier*df['CPU usage [MHZ]']).to_list()[10] < 3000:
-				self.possible_indices.append(i)			
+			if 500 < (ips_multiplier*df['CPU usage [MHZ]'])[10] < 3000:
+				self.possible_indices.append(i)
 
 	def generateNewContainers(self, interval):
 		workloadlist = []
-		for i in range(max(1,int(random.gauss(self.mean, self.sigma)))):
+		#for i in range(max(1,int(random.gauss(self.mean, self.sigma)))):
+		# generates 1 container per interval
+		for i in range(1):
 			CreationID = self.creation_id
 			index = random.choice(self.possible_indices)
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
