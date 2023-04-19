@@ -32,7 +32,7 @@ class Stats():
 		hostinfo['interval'] = self.env.interval
 		hostinfo['cpu'] = [host.getCPU() for host in self.env.hostlist]
 		hostinfo['numcontainers'] = [len(self.env.getContainersOfHost(i)) for i,host in enumerate(self.env.hostlist)]
-		hostinfo['power'] = [host.getPower() for host in self.env.hostlist]
+		#hostinfo['power'] = [host.getPower() for host in self.env.hostlist]
 		hostinfo['baseips'] = [host.getBaseIPS() for host in self.env.hostlist]
 		hostinfo['ipsavailable'] = [host.getIPSAvailable() for host in self.env.hostlist]
 		hostinfo['ipscap'] = [host.ipsCap for host in self.env.hostlist]
@@ -96,9 +96,9 @@ class Stats():
 		metrics['interval'] = self.env.interval
 		metrics['numdestroyed'] = len(destroyed)
 		metrics['nummigrations'] = len(migrations)
-		metrics['energy'] = [host.getPower()*self.env.intervaltime for host in self.env.hostlist]
-		metrics['energytotalinterval'] = np.sum(metrics['energy'])
-		metrics['energypercontainerinterval'] = np.sum(metrics['energy'])/self.env.getNumActiveContainers()
+		#metrics['energy'] = [host.getPower()*self.env.intervaltime for host in self.env.hostlist]
+		#metrics['energytotalinterval'] = np.sum(metrics['energy'])
+		#metrics['energypercontainerinterval'] = np.sum(metrics['energy'])/self.env.getNumActiveContainers()
 		metrics['responsetime'] = [c.totalExecTime + c.totalMigrationTime for c in destroyed]
 		metrics['avgresponsetime'] = np.average(metrics['responsetime']) if len(destroyed) > 0 else 0
 		metrics['migrationtime'] = [c.totalMigrationTime for c in destroyed]
