@@ -200,8 +200,8 @@ class Stats():
 		fig, axes = plt.subplots(9, 1, sharex=True, figsize=(4, 5))
 		x = list(range(len(self.metrics)))
 		res = {}
-		for i,metric in enumerate(['numdestroyed', 'nummigrations', 'energytotalinterval', 'avgresponsetime',\
-			 'avgmigrationtime', 'slaviolations', 'slaviolationspercentage', 'waittime', 'energypercontainerinterval']):
+		#for i,metric in enumerate(['numdestroyed', 'nummigrations', 'energytotalinterval', 'avgresponsetime','avgmigrationtime', 'slaviolations', 'slaviolationspercentage', 'waittime', 'energypercontainerinterval']):
+		for i,metric in enumerate(['numdestroyed', 'nummigrations', 'avgresponsetime','avgmigrationtime', 'slaviolations', 'slaviolationspercentage', 'waittime']):
 			metric_with_interval = [self.metrics[i][metric] for i in range(len(self.metrics))] if metric != 'waittime' else \
 				[sum(self.metrics[i][metric]) for i in range(len(self.metrics))]
 			axes[i].plot(x, metric_with_interval)
@@ -209,7 +209,7 @@ class Stats():
 			axes[i].grid(b=True, which='both', color='#eeeeee', linestyle='-')
 			res[metric] = sum(metric_with_interval)
 			print("Summation ", metric, " = ", res[metric])
-		print('Average energy (sum energy interval / sum numdestroyed) = ', res['energytotalinterval']/res['numdestroyed'])
+			
 		plt.tight_layout(pad=0)
 		plt.savefig(dirname + '/' + 'Metrics' + '.pdf')
 
