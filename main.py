@@ -53,7 +53,19 @@ from scheduler.HGOBI import HGOBIScheduler
 from scheduler.HGOBI2 import HGOBI2Scheduler
 from scheduler.HSOGOBI import HSOGOBIScheduler
 from scheduler.HSOGOBI2 import HSOGOBI2Scheduler
-from scheduler.zDetectionScheduler import DetectionScheduler
+
+from scheduler.zMyScheduler import MyScheduler
+
+# Recovery imports
+from recovery.Recovery import Recovery
+from recovery.PreGAN import PreGANRecovery
+from recovery.PCFT import PCFTRecovery
+from recovery.DFTM import DFTMRecovery
+from recovery.ECLB import ECLBRecovery
+from recovery.CMODLB import CMODLBRecovery
+
+from recovery.zMyRecovery import MyRecovery
+
 
 # Auxiliary imports
 from stats.Stats import *
@@ -72,7 +84,7 @@ opts, args = parser.parse_args()
 # Global constants
 NUM_SIM_STEPS = 20
 #HOSTS = 10 * 5 if opts.env == '' else 10
-HOSTS =  10
+HOSTS =  3
 
 CONTAINERS = HOSTS
 TOTAL_POWER = 1000
@@ -115,14 +127,18 @@ def initalizeEnvironment(environment, logger):
 	# Initialize scheduler
 	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
 	#scheduler = GOBIScheduler('energy_latency_'+str(HOSTS)) # GOBIScheduler('energy_latency_'+str(HOSTS))
-	scheduler = DetectionScheduler()
+	scheduler = MyScheduler()
+
+	# Initialize Failure Detector/Predictor/Recovery
+	''' Can be PreGANRecovery, PCFTRecovery, DFTMRecovery, ECLBRecovery, CMODLBRecovery '''
+	recovery = MyRecovery(HOSTS, environment, training = False)
 
 	# Initialize Environment
 	hostlist = datacenter.generateHosts()
 	if environment != '':
 		env = Framework(scheduler, CONTAINERS, INTERVAL_TIME, hostlist, db, environment, logger)
 	else:
-		env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, CONTAINERS, INTERVAL_TIME, hostlist)
+		env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
 	
 	# Initialize stats
 	stats = Stats(env, workload, datacenter, scheduler)
@@ -141,7 +157,7 @@ def initalizeEnvironment(environment, logger):
 	printDecisionAndMigrations(decision, migrations)
 
 	stats.saveStats(deployed, migrations, [], deployed, decision, schedulingTime)
-	return datacenter, workload, scheduler, env, stats
+	return datacenter, workload, scheduler, recovery, env, stats
 
 def stepSimulation(workload, scheduler, env, stats):
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
@@ -229,7 +245,7 @@ if __name__ == '__main__':
 			print(HOSTS_IP)
 		# exit()
 
-	datacenter, workload, scheduler, env, stats = initalizeEnvironment(env, logger)
+	datacenter, workload, scheduler, recovevry, env, stats = initalizeEnvironment(env, logger)
 
 	for step in range(NUM_SIM_STEPS):
 		print(color.BOLD+"Simulation Interval:", step, color.ENDC)

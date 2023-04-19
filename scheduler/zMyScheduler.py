@@ -1,7 +1,7 @@
 from .Scheduler import *
 import numpy as np
 
-class DetectionScheduler(Scheduler):
+class MyScheduler(Scheduler):
 	def __init__(self):
 		super().__init__()
 
