@@ -11,13 +11,6 @@ from time import time
 from subprocess import call
 from os import system, rename
 
-# Framework imports
-from framework.Framework import *
-from framework.database.Database import *
-from framework.datacenter.Datacenter_Setup import *
-from framework.datacenter.Datacenter import *
-from framework.workload.DeFogWorkload import *
-from framework.workload.AIoTBenchWorkload import *
 
 # Simulator imports
 from simulator.Simulator import *
@@ -72,14 +65,8 @@ from stats.Stats import *
 from utils.Utils import *
 from pdb import set_trace as bp
 
-usage = "usage: python main.py -e <environment> -m <mode> # empty environment run simulator"
+usage = "usage: python main.py"
 
-parser = optparse.OptionParser(usage=usage)
-parser.add_option("-e", "--environment", action="store", dest="env", default="", 
-					help="Environment is AWS, Openstack, Azure, VLAN, Vagrant")
-parser.add_option("-m", "--mode", action="store", dest="mode", default="0", 
-					help="Mode is 0 (Create and destroy), 1 (Create), 2 (No op), 3 (Destroy)")
-opts, args = parser.parse_args()
 
 # Global constants
 NUM_SIM_STEPS = 20
@@ -93,36 +80,22 @@ INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 1
 
-DB_NAME = ''
-DB_HOST = ''
-DB_PORT = 0
-HOSTS_IP = []
 logFile = 'COSCO.log'
 
 if len(sys.argv) > 1:
 	with open(logFile, 'w'): os.utime(logFile, None)
 
-def initalizeEnvironment(environment, logger):
-	if environment != '':
-		# Initialize the db
-		db = Database(DB_NAME, DB_HOST, DB_PORT)
+def initalizeEnvironment():
 
 	# Initialize simple fog datacenter
 	''' Can be SimpleFog, BitbrainFog, AzureFog // Datacenter '''
-	if environment != '':
-		datacenter = Datacenter(HOSTS_IP, environment, 'Virtual')
-	else:
-		#datacenter = AzureFog(HOSTS)
-		datacenter = MyFog(HOSTS)
+	datacenter = MyFog(HOSTS)
 
 	# Initialize workload
 	''' Can be SWSD, BWGD2, Azure2017Workload, Azure2019Workload // DFW, AIoTW '''
-	if environment != '':
-		workload = DFW(NEW_CONTAINERS, 1.5, db)
-	else: 
-		#workload = BWGD2(NEW_CONTAINERS, 1.5)
-		workload = MyBW(NEW_CONTAINERS)
-		#workload = Azure2019Workload(NEW_CONTAINERS, 1.5)
+	#workload = BWGD2(NEW_CONTAINERS, 1.5)
+	workload = MyBW(NEW_CONTAINERS)
+	#workload = Azure2019Workload(NEW_CONTAINERS, 1.5)
 
 	# Initialize scheduler
 	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
@@ -131,14 +104,11 @@ def initalizeEnvironment(environment, logger):
 
 	# Initialize Failure Detector/Predictor/Recovery
 	''' Can be PreGANRecovery, PCFTRecovery, DFTMRecovery, ECLBRecovery, CMODLBRecovery '''
-	recovery = MyRecovery(HOSTS, environment, training = False)
+	recovery = MyRecovery(HOSTS, training = False)
 
 	# Initialize Environment
 	hostlist = datacenter.generateHosts()
-	if environment != '':
-		env = Framework(scheduler, CONTAINERS, INTERVAL_TIME, hostlist, db, environment, logger)
-	else:
-		env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
+	env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
 
 	# Initialize stats
 	stats = Stats(env, workload, datacenter, scheduler)
@@ -161,7 +131,6 @@ def initalizeEnvironment(environment, logger):
 
 def stepSimulation(workload, scheduler, recovery, env, stats):
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
-	if opts.env != '': print(newcontainerinfos)
 	deployed, destroyed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
 	start = time()
 	selected = scheduler.selection() # Select container IDs for migration
@@ -213,53 +182,12 @@ def saveStats(stats, datacenter, workload, env, end=True):
 	    pickle.dump(stats, handle)
 
 if __name__ == '__main__':
-	env, mode = opts.env, int(opts.mode)
-
-	if env != '':
-		# Convert all agent files to unix format
-		unixify(['framework/agent/', 'framework/agent/scripts/'])
-
-		# Start InfluxDB service
-		print(color.HEADER+'InfluxDB service runs as a separate front-end window. Please minimize this window.'+color.ENDC)
-		if 'Windows' in platform.system():
-			os.startfile('C:/Program Files/InfluxDB/influxdb-1.8.3-1/influxd.exe')
-
-		configFile = 'framework/config/' + opts.env + '_config.json'
-	    
-		logger.basicConfig(filename=logFile, level=logger.DEBUG,
-	                        format='%(asctime)s - %(levelname)s - %(message)s')
-		logger.debug("Creating enviornment in :{}".format(env))
-		cfg = {}
-		with open(configFile, "r") as f:
-			cfg = json.load(f)
-		DB_HOST = cfg['database']['ip']
-		DB_PORT = cfg['database']['port']
-		DB_NAME = 'COSCO'
-
-		if env == 'Vagrant':
-			print("Setting up VirtualBox environment using Vagrant")
-			HOSTS_IP = setupVagrantEnvironment(configFile, mode)
-			print(HOSTS_IP)
-		elif env == 'VLAN':
-			print("Setting up VLAN environment using Ansible")
-			HOSTS_IP = setupVLANEnvironment(configFile, mode)
-			print(HOSTS_IP)
-		# exit()
-
 	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(env, logger)
 
 	for step in range(NUM_SIM_STEPS):
-		print(color.BOLD+("Simulation" if opts.env == '' else "Execution")+" Interval:", step, color.ENDC)
+		print(color.BOLD+"Simulation Interval:", step, color.ENDC)
 		stepSimulation(workload, scheduler, recovery, env, stats)
-		if env != '' and step % 10 == 0: saveStats(stats, datacenter, workload, env, end = False)
-
-	if opts.env != '':
-		# Destroy environment if required
-		eval('destroy'+opts.env+'Environment(configFile, mode)')
-
-		# Quit InfluxDB
-		if 'Windows' in platform.system():
-			os.system('taskkill /f /im influxd.exe')
+		
 
 	saveStats(stats, datacenter, workload, env)
 
