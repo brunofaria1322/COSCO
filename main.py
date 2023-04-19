@@ -14,49 +14,14 @@ from os import system, rename
 
 # Simulator imports
 from simulator.Simulator import *
-from simulator.environment.AzureFog import *
-from simulator.environment.BitbrainFog import *
 from simulator.environment.MyFog import *
 
-from simulator.workload.BitbrainWorkload2 import *
-from simulator.workload.Azure2017Workload import *
-from simulator.workload.Azure2019Workload import *
 from simulator.workload.MyBitbrainWorkload import *
 
 # Scheduler imports
-from scheduler.IQR_MMT_Random import IQRMMTRScheduler
-from scheduler.MAD_MMT_Random import MADMMTRScheduler
-from scheduler.MAD_MC_Random import MADMCRScheduler
-from scheduler.LR_MMT_Random import LRMMTRScheduler
-from scheduler.Random_Random_FirstFit import RFScheduler
-from scheduler.Random_Random_LeastFull import RLScheduler
-from scheduler.RLR_MMT_Random import RLRMMTRScheduler
-from scheduler.Threshold_MC_Random import TMCRScheduler
-from scheduler.Random_Random_Random import RandomScheduler
-from scheduler.HGP_LBFGS import HGPScheduler
-from scheduler.GA import GAScheduler
-from scheduler.GOBI import GOBIScheduler
-from scheduler.GOBI2 import GOBI2Scheduler
-from scheduler.DRL import DRLScheduler
-from scheduler.DQL import DQLScheduler
-from scheduler.POND import PONDScheduler
-from scheduler.SOGOBI import SOGOBIScheduler
-from scheduler.SOGOBI2 import SOGOBI2Scheduler
-from scheduler.HGOBI import HGOBIScheduler
-from scheduler.HGOBI2 import HGOBI2Scheduler
-from scheduler.HSOGOBI import HSOGOBIScheduler
-from scheduler.HSOGOBI2 import HSOGOBI2Scheduler
-
 from scheduler.zMyScheduler import MyScheduler
 
 # Recovery imports
-from recovery.Recovery import Recovery
-from recovery.PreGAN import PreGANRecovery
-from recovery.PCFT import PCFTRecovery
-from recovery.DFTM import DFTMRecovery
-from recovery.ECLB import ECLBRecovery
-from recovery.CMODLB import CMODLBRecovery
-
 from recovery.zMyRecovery import MyRecovery
 
 
@@ -87,32 +52,40 @@ if len(sys.argv) > 1:
 def initalizeEnvironment():
 
 	# Initialize simple fog datacenter
+	print('Initializing environment...')
 	''' Can be SimpleFog, BitbrainFog, AzureFog // Datacenter '''
 	datacenter = MyFog(HOSTS)
 
 	# Initialize workload
+	print('Initializing workload...')
 	''' Can be SWSD, BWGD2, Azure2017Workload, Azure2019Workload // DFW, AIoTW '''
 	#workload = BWGD2(NEW_CONTAINERS, 1.5)
 	workload = MyBW(NEW_CONTAINERS)
 	#workload = Azure2019Workload(NEW_CONTAINERS, 1.5)
 
 	# Initialize scheduler
+	print('Initializing scheduler...')
 	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
 	#scheduler = GOBIScheduler('energy_latency_'+str(HOSTS)) # GOBIScheduler('energy_latency_'+str(HOSTS))
 	scheduler = MyScheduler()
 
 	# Initialize Failure Detector/Predictor/Recovery
+	print('Initializing recovery...')
 	''' Can be PreGANRecovery, PCFTRecovery, DFTMRecovery, ECLBRecovery, CMODLBRecovery '''
 	recovery = MyRecovery(HOSTS, training = False)
 
 	# Initialize Environment
+	print('Generating hosts...')
 	hostlist = datacenter.generateHosts()
+	print('Initializing simulator...')
 	env = Simulator(ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
 
 	# Initialize stats
+	print('Initializing stats...')
 	stats = Stats(env, workload, datacenter, scheduler)
 
 	# Execute first step
+	print('Executing first step...')
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
 	deployed = env.addContainersInit(newcontainerinfos) # Deploy new containers and get container IDs
 	start = time()
@@ -154,7 +127,6 @@ def saveStats(stats, datacenter, workload, env, end=True):
 	dirname += "_" + str(NUM_SIM_STEPS) 
 	dirname += "_" + str(HOSTS)
 	dirname += "_" + str(CONTAINERS)
-	dirname += "_" + str(TOTAL_POWER)
 	dirname += "_" + str(ROUTER_BW)
 	dirname += "_" + str(INTERVAL_TIME)
 	dirname += "_" + str(NEW_CONTAINERS)
