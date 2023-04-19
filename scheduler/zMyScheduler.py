@@ -4,6 +4,7 @@ import numpy as np
 class MyScheduler(Scheduler):
 	def __init__(self):
 		super().__init__()
+		self.result_cache = None
 
 	def selection(self):
 		selectedContainerIDs = []
