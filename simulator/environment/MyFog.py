@@ -2,12 +2,6 @@ import numpy as np
 from simulator.host.Disk import *
 from simulator.host.RAM import *
 from simulator.host.Bandwidth import *
-from metrics.powermodels.PMRaspberryPi import *
-from metrics.powermodels.PMB2s import *
-from metrics.powermodels.PMB4ms import *
-from metrics.powermodels.PMB8ms import *
-from metrics.powermodels.PMXeon_X5570 import *
-from metrics.powermodels.PMConstant import *
 
 class MyFog():
 	def __init__(self, num_hosts):
@@ -21,8 +15,7 @@ class MyFog():
 			'DiskRead' : [2000, 2000, 3000],
 			'DiskWrite' : [2000, 2000, 3000],
 			'BwUp' : [1000, 2000, 5000],
-			'BwDown': [2000, 4000, 10000],
-			'Power' : [1]
+			'BwDown': [2000, 4000, 10000]
  		}
 
 	def generateHosts(self):
@@ -33,6 +26,5 @@ class MyFog():
 			Ram = RAM(self.types['RAMSize'][typeID], self.types['RAMRead'][typeID], self.types['RAMWrite'][typeID])
 			Disk_ = Disk(self.types['DiskSize'][typeID], self.types['DiskRead'][typeID], self.types['DiskWrite'][typeID])
 			Bw = Bandwidth(self.types['BwUp'][typeID], self.types['BwDown'][typeID])
-			Power = PMConstant(self.types['Power'][typeID]) if typeID < 1 else PMRaspberryPi()
-			hosts.append((IPS, Ram, Disk_, Bw, 0, Power))
+			hosts.append((IPS, Ram, Disk_, Bw, 0))
 		return hosts
