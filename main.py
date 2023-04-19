@@ -91,7 +91,7 @@ TOTAL_POWER = 1000
 ROUTER_BW = 10000
 INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
-NEW_CONTAINERS = 0
+NEW_CONTAINERS = 1
 
 DB_NAME = ''
 DB_HOST = ''
@@ -121,7 +121,7 @@ def initalizeEnvironment(environment, logger):
 		workload = DFW(NEW_CONTAINERS, 1.5, db)
 	else: 
 		#workload = BWGD2(NEW_CONTAINERS, 1.5)
-		workload = MyBW(NEW_CONTAINERS, 1.5)
+		workload = MyBW(NEW_CONTAINERS)
 		#workload = Azure2019Workload(NEW_CONTAINERS, 1.5)
 
 	# Initialize scheduler
@@ -139,7 +139,7 @@ def initalizeEnvironment(environment, logger):
 		env = Framework(scheduler, CONTAINERS, INTERVAL_TIME, hostlist, db, environment, logger)
 	else:
 		env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
-	
+
 	# Initialize stats
 	stats = Stats(env, workload, datacenter, scheduler)
 
@@ -159,7 +159,7 @@ def initalizeEnvironment(environment, logger):
 	stats.saveStats(deployed, migrations, [], deployed, decision, schedulingTime)
 	return datacenter, workload, scheduler, recovery, env, stats
 
-def stepSimulation(workload, scheduler, env, stats):
+def stepSimulation(workload, scheduler, recovery, env, stats):
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
 	if opts.env != '': print(newcontainerinfos)
 	deployed, destroyed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
@@ -167,7 +167,8 @@ def stepSimulation(workload, scheduler, env, stats):
 	selected = scheduler.selection() # Select container IDs for migration
 	decision = scheduler.filter_placement(scheduler.placement(selected+deployed)) # Decide placement for selected container ids
 	schedulingTime = time() - start
-	migrations = env.simulationStep(decision) # Schedule containers
+	recovered_decision = recovery.run_model(stats.time_series, decision)
+	migrations = env.simulationStep(recovered_decision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
 	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
 	print("Deployed:", len(env.getCreationIDs(migrations, deployed)), "of", len(newcontainerinfos), [i[0] for i in newcontainerinfos])
@@ -245,11 +246,11 @@ if __name__ == '__main__':
 			print(HOSTS_IP)
 		# exit()
 
-	datacenter, workload, scheduler, recovevry, env, stats = initalizeEnvironment(env, logger)
+	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(env, logger)
 
 	for step in range(NUM_SIM_STEPS):
-		print(color.BOLD+"Simulation Interval:", step, color.ENDC)
-		stepSimulation(workload, scheduler, env, stats)
+		print(color.BOLD+("Simulation" if opts.env == '' else "Execution")+" Interval:", step, color.ENDC)
+		stepSimulation(workload, scheduler, recovery, env, stats)
 		if env != '' and step % 10 == 0: saveStats(stats, datacenter, workload, env, end = False)
 
 	if opts.env != '':
