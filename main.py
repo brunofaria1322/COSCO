@@ -74,7 +74,6 @@ NUM_SIM_STEPS = 20
 HOSTS =  3
 
 CONTAINERS = HOSTS
-TOTAL_POWER = 1000
 ROUTER_BW = 10000
 INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
@@ -108,7 +107,7 @@ def initalizeEnvironment():
 
 	# Initialize Environment
 	hostlist = datacenter.generateHosts()
-	env = Simulator(TOTAL_POWER, ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
+	env = Simulator(ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
 
 	# Initialize stats
 	stats = Stats(env, workload, datacenter, scheduler)
