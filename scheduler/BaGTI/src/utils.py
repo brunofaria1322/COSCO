@@ -7,6 +7,9 @@ import torch
 import random
 import statistics
 
+
+import scienceplots
+
 from sys import argv
 
 plt.style.use(['science', 'ieee'])

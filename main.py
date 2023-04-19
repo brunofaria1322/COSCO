@@ -110,7 +110,8 @@ def initalizeEnvironment(environment, logger):
 	else: 
 		#workload = BWGD2(NEW_CONTAINERS, 1.5)
 		workload = MyBW(NEW_CONTAINERS, 1.5)
-	
+		#workload = Azure2019Workload(NEW_CONTAINERS, 1.5)
+
 	# Initialize scheduler
 	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
 	#scheduler = GOBIScheduler('energy_latency_'+str(HOSTS)) # GOBIScheduler('energy_latency_'+str(HOSTS))
