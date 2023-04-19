@@ -209,7 +209,7 @@ class Stats():
 			axes[i].grid(b=True, which='both', color='#eeeeee', linestyle='-')
 			res[metric] = sum(metric_with_interval)
 			print("Summation ", metric, " = ", res[metric])
-			
+		#print('Average energy (sum energy interval / sum numdestroyed) = ', res['energytotalinterval']/res['numdestroyed'])
 		plt.tight_layout(pad=0)
 		plt.savefig(dirname + '/' + 'Metrics' + '.pdf')
 
