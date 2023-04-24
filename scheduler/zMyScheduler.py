@@ -7,8 +7,10 @@ class MyScheduler(Scheduler):
 		self.result_cache = None
 
 	def selection(self):
-		selectedContainerIDs = []
-		for hostID, host in enumerate(self.env.hostlist):
+		selectedContainerIDs_targetHost = []
+		half_hosts_len = int(len(self.env.hostlist)/2)
+		# runs only the firs half of hosts (others are replicas)
+		for hostID, host in enumerate(self.env.hostlist[:half_hosts_len]):
 			# FAULT DETECTION
 			if host.getCPU() > 80:
 				# host with CPU usage above 80%
@@ -17,11 +19,11 @@ class MyScheduler(Scheduler):
 					# all the containers in host (Instructions per second)
 					containerIPs = [self.env.containerlist[cid].getBaseIPS() for cid in containerIDs]
 					# selects the container that consumes more cpu resources (has more instructon per second (IPs))
-					selectedContainerIDs.append(containerIDs[np.argmax(containerIPs)])
+					selectedContainerIDs_targetHost.append((containerIDs[np.argmax(containerIPs)], hostID + half_hosts_len))
 					
 					print(f'HOST {hostID} has cpu usage of {host.getCPU()}: {containerIPs}\t{host.ipsCap}\t{host.getBaseIPS()}')
 		
-		return selectedContainerIDs
+		return selectedContainerIDs_targetHost
 
 	def placement(self, containerIDs):
 		print('-------------place in')
@@ -37,10 +39,13 @@ class MyScheduler(Scheduler):
 			print(cid, end='\t')
 			print(scores)
 
-			leastFullHost = min(scores, key = lambda t: t[1])
+			#leastFullHost = min(scores, key = lambda t: t[1])
 
-			decision.append((cid, leastFullHost[0]))
-			scores.remove(leastFullHost)
+			#decision.append((cid, leastFullHost[0]))
+			#scores.remove(leastFullHost)
+
+			# Will send allways to the first host (start of the Service Chain)
+			decision.append((cid, 0))
 
 		print(decision)
 		print('-------------place out')
