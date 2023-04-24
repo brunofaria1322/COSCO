@@ -36,7 +36,7 @@ usage = "usage: python main.py"
 # Global constants
 NUM_SIM_STEPS = 20
 #HOSTS = 10 * 5 if opts.env == '' else 10
-HOSTS =  3
+HOSTS =  3 * 2
 
 CONTAINERS = HOSTS
 ROUTER_BW = 10000
@@ -46,8 +46,6 @@ NEW_CONTAINERS = 1
 
 logFile = 'COSCO.log'
 
-if len(sys.argv) > 1:
-	with open(logFile, 'w'): os.utime(logFile, None)
 
 def initalizeEnvironment():
 
@@ -105,8 +103,10 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
 	deployed, destroyed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
 	start = time()
-	selected = scheduler.selection() # Select container IDs for migration
-	decision = scheduler.filter_placement(scheduler.placement(selected+deployed)) # Decide placement for selected container ids
+	replica_decision = scheduler.selection() # Select container IDs for migration to replica
+	selected = [cid for cid,_ in replica_decision]
+	decision = scheduler.filter_placement(scheduler.placement(deployed)) # Decide placement for selected container ids
+	decision = replica_decision + decision
 	schedulingTime = time() - start
 	recovered_decision = recovery.run_model(stats.time_series, decision)
 	migrations = env.simulationStep(recovered_decision) # Schedule containers
@@ -134,21 +134,12 @@ def saveStats(stats, datacenter, workload, env, end=True):
 	if os.path.exists(dirname): shutil.rmtree(dirname, ignore_errors=True)
 	os.mkdir(dirname)
 	stats.generateDatasets(dirname)
-	if 'Datacenter' in datacenter.__class__.__name__:
-		saved_env, saved_workload, saved_datacenter, saved_scheduler, saved_sim_scheduler = stats.env, stats.workload, stats.datacenter, stats.scheduler, stats.simulated_scheduler
-		stats.env, stats.workload, stats.datacenter, stats.scheduler, stats.simulated_scheduler = None, None, None, None, None
-		with open(dirname + '/' + dirname.split('/')[1] +'.pk', 'wb') as handle:
-		    pickle.dump(stats, handle)
-		stats.env, stats.workload, stats.datacenter, stats.scheduler, stats.simulated_scheduler = saved_env, saved_workload, saved_datacenter, saved_scheduler, saved_sim_scheduler
+	
 	if not end: return
 	stats.generateGraphs(dirname)
 	stats.generateCompleteDatasets(dirname)
 	stats.env, stats.workload, stats.datacenter, stats.scheduler = None, None, None, None
-	if 'Datacenter' in datacenter.__class__.__name__:
-		stats.simulated_scheduler = None
-		logger.getLogger().handlers.clear(); env.logger.getLogger().handlers.clear()
-		if os.path.exists(dirname+'/'+logFile): os.remove(dirname+'/'+logFile)
-		rename(logFile, dirname+'/'+logFile)
+	
 	with open(dirname + '/' + dirname.split('/')[1] +'.pk', 'wb') as handle:
 	    pickle.dump(stats, handle)
 
@@ -161,4 +152,3 @@ if __name__ == '__main__':
 		
 
 	saveStats(stats, datacenter, workload, env)
-
