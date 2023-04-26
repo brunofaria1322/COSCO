@@ -27,27 +27,30 @@ class MyScheduler(Scheduler):
 
 	def placement(self, containerIDs):
 		print('-------------place in')
-		decision = []
+		decisions = []
 		# List with the cpu usafe of each host
-		scores = [(hostID, host.getCPU()) for hostID, host in enumerate(self.env.hostlist)]
+		#scores = [(hostID, host.getCPU()) for hostID, host in enumerate(self.env.hostlist)]
 		
 		for cid in containerIDs:
 			# run simple simulation will return energy consumption (we probably can use something that takes into account the CPU or "availability" instead)
 			#scores = [self.env.stats.runSimpleSimulation([(cid, hostID)]) for hostID, _ in enumerate(self.env.hostlist)]
 
 			
-			print(cid, end='\t')
-			print(scores)
+			#print(cid, end='\t')
+			#print(scores)
 
 			#leastFullHost = min(scores, key = lambda t: t[1])
 
 			#decision.append((cid, leastFullHost[0]))
 			#scores.remove(leastFullHost)
 
-			# Will send allways to the first host (start of the Service Chain)
-			decision.append((cid, 0))
+			container_ltype = self.env.getContainerByID(cid).getLType()
+			print(container_ltype)
 
-		print(decision)
+			# Will send allways to the first host (start of the Service Chain)
+			decisions.append((cid, container_ltype))
+
+		print(decisions)
 		print('-------------place out')
 
-		return decision
+		return decisions

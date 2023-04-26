@@ -1,22 +1,22 @@
 interval,selection,decision,schedule,schedulingtime
-1,[0],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.368492126464844e-05
-2,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00011563301086425781
-3,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",9.393692016601562e-05
-4,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.916854858398438e-05
-5,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.0001239776611328125
-6,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.702278137207031e-05
-7,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.320808410644531e-05
-8,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00011229515075683594
-9,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.630752563476562e-05
-10,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.463859558105469e-05
-11,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.893013000488281e-05
-12,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.821487426757812e-05
-13,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.821487426757812e-05
-14,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.749961853027344e-05
-15,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",9.250640869140625e-05
-16,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",9.083747863769531e-05
-17,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.606910705566406e-05
-18,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00011706352233886719
-19,[],"[(0, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00010967254638671875
-20,[],"[(0, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00011086463928222656
-21,[],"[(2, 0)]","[(0, 0), (1, 0), (2, 0), (None, None), (None, None), (None, None)]",0.0001327991485595703
+1,[0],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",7.605552673339844e-05
+2,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.96453857421875e-05
+3,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",8.678436279296875e-05
+4,[],"[(0, 0)]","[(0, 0), (None, None), (None, None), (None, None), (None, None), (None, None)]",9.465217590332031e-05
+5,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00011134147644042969
+6,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00011396408081054688
+7,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00011944770812988281
+8,[0],"[(0, 3), (2, 0)]","[(0, 3), (1, 0), (2, 0), (None, None), (None, None), (None, None)]",0.0002384185791015625
+9,[],"[(1, 0)]","[(0, 3), (1, 0), (None, None), (None, None), (None, None), (None, None)]",0.00010633468627929688
+10,[],"[(2, 0)]","[(0, 3), (1, 0), (2, 0), (None, None), (None, None), (None, None)]",0.00012254714965820312
+11,[],"[(0, 0)]","[(0, 0), (None, None), (2, 0), (None, None), (None, None), (None, None)]",0.00011181831359863281
+12,[],"[(0, 0)]","[(0, 0), (None, None), (2, 0), (None, None), (None, None), (None, None)]",0.0001270771026611328
+13,[],"[(0, 0)]","[(0, 0), (None, None), (2, 0), (None, None), (None, None), (None, None)]",0.00011730194091796875
+14,[],"[(1, 0)]","[(0, 0), (1, 0), (2, 0), (None, None), (None, None), (None, None)]",0.00013589859008789062
+15,[],"[(1, 0)]","[(0, 0), (1, 0), (2, 0), (None, None), (None, None), (None, None)]",0.0001442432403564453
+16,[2],"[(2, 3), (3, 0)]","[(0, 0), (1, 0), (2, 3), (3, 0), (None, None), (None, None)]",0.00025963783264160156
+17,[],"[(3, 0)]","[(0, 0), (1, 0), (2, 3), (3, 0), (None, None), (None, None)]",0.00015497207641601562
+18,[],"[(3, 0)]","[(0, 0), (1, 0), (2, 3), (3, 0), (None, None), (None, None)]",0.00015401840209960938
+19,[],"[(3, 0)]","[(0, 0), (1, 0), (2, 3), (3, 0), (None, None), (None, None)]",0.00016260147094726562
+20,[],"[(3, 0)]","[(0, 0), (1, 0), (2, 3), (3, 0), (None, None), (None, None)]",0.00016188621520996094
+21,[],"[(1, 0)]","[(0, 0), (1, 0), (None, None), (3, 0), (None, None), (None, None)]",0.00013184547424316406
