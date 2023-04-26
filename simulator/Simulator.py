@@ -1,5 +1,5 @@
 from simulator.host.MyHost import *
-from simulator.container.Container import *
+from simulator.container.MyContainer import *
 
 class Simulator():
 	# Total Router Bw
@@ -30,32 +30,32 @@ class Simulator():
 		for IPS, RAM, Disk, Bw, Latency in hostList:
 			self.addHostInit(IPS, RAM, Disk, Bw, Latency)
 
-	def addContainerInit(self, CreationID, CreationInterval, IPSModel, RAMModel, DiskModel):
-		container = Container(len(self.containerlist), CreationID, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
+	def addContainerInit(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
+		container = Container(len(self.containerlist), CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
 		self.containerlist.append(container)
 		return container
 
 	def addContainerListInit(self, containerInfoList):
 		deployed = containerInfoList[:min(len(containerInfoList), self.containerlimit-self.getNumActiveContainers())]
 		deployedContainers = []
-		for CreationID, CreationInterval, IPSModel, RAMModel, DiskModel in deployed:
-			dep = self.addContainerInit(CreationID, CreationInterval, IPSModel, RAMModel, DiskModel)
+		for CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel in deployed:
+			dep = self.addContainerInit(CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel)
 			deployedContainers.append(dep)
 		self.containerlist += [None] * (self.containerlimit - len(self.containerlist))
 		return [container.id for container in deployedContainers]
 
-	def addContainer(self, CreationID, CreationInterval, IPSModel, RAMModel, DiskModel):
+	def addContainer(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
 		for i,c in enumerate(self.containerlist):
 			if c == None or not c.active:
-				container = Container(i, CreationID, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
+				container = Container(i, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
 				self.containerlist[i] = container
 				return container
 
 	def addContainerList(self, containerInfoList):
 		deployed = containerInfoList[:min(len(containerInfoList), self.containerlimit-self.getNumActiveContainers())]
 		deployedContainers = []
-		for CreationID, CreationInterval, IPSModel, RAMModel, DiskModel in deployed:
-			dep = self.addContainer(CreationID, CreationInterval, IPSModel, RAMModel, DiskModel)
+		for CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel in deployed:
+			dep = self.addContainer(CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel)
 			deployedContainers.append(dep)
 		return [container.id for container in deployedContainers]
 

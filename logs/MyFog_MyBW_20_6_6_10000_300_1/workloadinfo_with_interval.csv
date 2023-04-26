@@ -6,7 +6,7 @@ interval,totalcontainers,newcontainers,deployed,migrations,inqueue
 5,5,1,1,1,0
 6,6,1,1,1,0
 7,7,1,1,1,0
-8,8,1,1,1,0
+8,8,1,1,2,0
 9,9,1,1,1,0
 10,10,1,1,1,0
 11,11,1,1,1,0
@@ -14,7 +14,7 @@ interval,totalcontainers,newcontainers,deployed,migrations,inqueue
 13,13,1,1,1,0
 14,14,1,1,1,0
 15,15,1,1,1,0
-16,16,1,1,1,0
+16,16,1,1,2,0
 17,17,1,1,1,0
 18,18,1,1,1,0
 19,19,1,1,1,0

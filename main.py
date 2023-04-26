@@ -16,7 +16,8 @@ from os import system, rename
 from simulator.Simulator import *
 from simulator.environment.MyFog import *
 
-from simulator.workload.MyBitbrainWorkload import *
+#from simulator.workload.MyBitbrainWorkload import *
+from simulator.workload.MyAzure2019Workload import *
 
 # Scheduler imports
 from scheduler.zMyScheduler import MyScheduler
@@ -58,8 +59,9 @@ def initalizeEnvironment():
 	print('Initializing workload...')
 	''' Can be SWSD, BWGD2, Azure2017Workload, Azure2019Workload // DFW, AIoTW '''
 	#workload = BWGD2(NEW_CONTAINERS, 1.5)
-	workload = MyBW(NEW_CONTAINERS)
+	#workload = MyBW(NEW_CONTAINERS)
 	#workload = Azure2019Workload(NEW_CONTAINERS, 1.5)
+	workload = MyAzure2019Workload(NEW_CONTAINERS)
 
 	# Initialize scheduler
 	print('Initializing scheduler...')
@@ -75,6 +77,7 @@ def initalizeEnvironment():
 	# Initialize Environment
 	print('Generating hosts...')
 	hostlist = datacenter.generateHosts()
+	
 	print('Initializing simulator...')
 	env = Simulator(ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
 
