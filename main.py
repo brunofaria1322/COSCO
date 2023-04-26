@@ -35,17 +35,15 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 20
+NUM_SIM_STEPS = 5
 #HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS =  3 * 2
 
-CONTAINERS = HOSTS
+CONTAINERS = HOSTS * 5
 ROUTER_BW = 10000
 INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 1
-
-logFile = 'COSCO.log'
 
 
 def initalizeEnvironment():
@@ -103,8 +101,25 @@ def initalizeEnvironment():
 	return datacenter, workload, scheduler, recovery, env, stats
 
 def stepSimulation(workload, scheduler, recovery, env, stats):
+	destroyed = env.destroyCompletedContainers()
+	print(f"Destroyed = {[c.id for c in destroyed]}")
+
+	if destroyed:
+		for container in destroyed:
+			cont_ltype = container.getLType()
+			if cont_ltype < 2:
+				workload.generateNewContainers(env.interval, cont_ltype+1)	#new container for the next layer
+
+
+	
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
-	deployed, destroyed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
+	print([(c[0],c[1]) for c in newcontainerinfos])
+	deployed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
+	
+	print(f"Deployed = {deployed}")
+
+
+
 	start = time()
 	replica_decision = scheduler.selection() # Select container IDs for migration to replica
 	selected = [cid for cid,_ in replica_decision]
