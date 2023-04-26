@@ -45,7 +45,7 @@ class MyScheduler(Scheduler):
 			#scores.remove(leastFullHost)
 
 			container_ltype = self.env.getContainerByID(cid).getLType()
-			print(container_ltype)
+			print(f"Container with ID {cid} has type {container_ltype}")
 
 			# Will send allways to the first host (start of the Service Chain)
 			decisions.append((cid, container_ltype))

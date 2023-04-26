@@ -3,6 +3,7 @@ from simulator.container.IPSModels.IPSMBitbrain import *
 from simulator.container.RAMModels.RMBitbrain import *
 from simulator.container.DiskModels.DMBitbrain import *
 import random
+import math
 from os import path, makedirs, listdir, remove
 import wget
 from zipfile import ZipFile
@@ -60,7 +61,8 @@ class MyAzure2019Workload(Workload):
 		self.az_dpath = az_dpath
 		self.disk_sizes = [1, 2, 3]
 		self.meanSLA, self.sigmaSLA = 20, 3
-		self.max_sla = 30
+		self.meanSLA, self.sigmaSLA = 3, 0.5
+		self.max_sla = math.ceil(self.meanSLA + 3 *  self.sigmaSLA)
 		self.possible_indices = [[],[],[]]	# 3 types
 		for i in range(1, 500):
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
