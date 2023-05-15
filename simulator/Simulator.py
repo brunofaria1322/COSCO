@@ -20,15 +20,15 @@ class Simulator():
 		self.stats = None
 		self.addHostlistInit(hostinit)
 
-	def addHostInit(self, IPS, RAM, Disk, Bw, Latency):
+	def addHostInit(self, IPS, RAM, Disk, Bw, Latency, layer_type):
 		assert len(self.hostlist) < self.hostlimit
-		host = Host(len(self.hostlist), IPS, RAM, Disk, Bw, Latency, self)
+		host = Host(len(self.hostlist), IPS, RAM, Disk, Bw, Latency, self, layer_type)
 		self.hostlist.append(host)
 
 	def addHostlistInit(self, hostList):
 		assert len(hostList) == self.hostlimit
-		for IPS, RAM, Disk, Bw, Latency in hostList:
-			self.addHostInit(IPS, RAM, Disk, Bw, Latency)
+		for IPS, RAM, Disk, Bw, Latency, layer_type in hostList:
+			self.addHostInit(IPS, RAM, Disk, Bw, Latency, layer_type)
 
 	def addContainerInit(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
 		container = Container(len(self.containerlist), CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)

@@ -7,7 +7,7 @@ class Host():
 	# RAM = Ram in MB capacity
 	# Disk = Disk characteristics capacity
 	# Bw = Bandwidth characteristics capacity
-	def __init__(self, ID, IPS, RAM, Disk, Bw, Latency, Environment):
+	def __init__(self, ID, IPS, RAM, Disk, Bw, Latency, Environment, layer_type):
 		self.id = ID
 		self.ipsCap = IPS
 		self.ramCap = RAM
@@ -15,6 +15,7 @@ class Host():
 		self.bwCap = Bw
 		self.latency = Latency
 		self.env = Environment
+		self.layer_type = layer_type # 0 = edge, 1 = fog, 2 = cloud
 		
 	def getCPU(self):
 		ips = self.getApparentIPS()

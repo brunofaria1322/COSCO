@@ -68,5 +68,5 @@ class MyFog():
 			Bw = Bandwidth(self.types[typeID]['BwUp'], self.types[typeID]['BwDown'])
 			#Power = eval(self.types[typeID]['Power']+'()')
 			Latency = self.types[typeID]['Latency']
-			hosts.append((IPS, Ram, Disk_, Bw, Latency))
+			hosts.append((IPS, Ram, Disk_, Bw, Latency, typeID))
 		return hosts

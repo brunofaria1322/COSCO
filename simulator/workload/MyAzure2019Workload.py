@@ -36,6 +36,13 @@ def createfiles(df):
 class MyAzure2019Workload(Workload):
 	def __init__(self, numContainers):
 		super().__init__()
+
+		## FAILURES
+		self.creationFailure_id = 0
+		self.createdFailures = []
+		self.deployedFailures = []
+		## END FAILURES
+
 		self.num = numContainers
 		dataset_path = 'simulator/workload/datasets/bitbrain/'
 		az_dpath = 'simulator/workload/datasets/azure_2019/'
@@ -109,3 +116,18 @@ class MyAzure2019Workload(Workload):
 		self.createdContainers += workloadlist
 		self.deployedContainers += [False] * len(workloadlist)
 		return self.getUndeployedContainers()
+	
+	def injectFailure(self, interval, host):
+		#
+		# layer_type:	0 - edge
+		#				1 - fog
+		#				2 - cloud
+		#
+
+		failurelist = []
+		for _ in range(1):
+			CreationID = self.creation_id
+			index = random.choice(self.possible_indices[host.layer_type])
+			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
+			df2 = pd.read_csv(self.az_dpath+str(index)+'.csv', header=None)
+			sla = random.gauss(self.meanSLA, self.sigmaSLA)
