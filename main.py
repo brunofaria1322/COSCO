@@ -104,12 +104,12 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	destroyed = env.destroyCompletedContainers()
 	print(f"Destroyed = {[c.id for c in destroyed]}")
 
+	# Create new container in the next layer
 	if destroyed:
 		for container in destroyed:
 			cont_ltype = container.getLType()
 			if cont_ltype < 2:
 				workload.generateNewContainers(env.interval, cont_ltype+1)	#new container for the next layer
-
 
 	
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
@@ -117,7 +117,6 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	deployed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
 	
 	print(f"Deployed = {deployed}")
-
 
 
 	start = time()
