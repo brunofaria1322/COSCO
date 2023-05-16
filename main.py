@@ -118,22 +118,29 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	
 	print(f"Deployed = {deployed}")
 
-
 	start = time()
 	replica_decision = scheduler.selection() # Select container IDs for migration to replica
 	selected = [cid for cid,_ in replica_decision]
 	decision = scheduler.filter_placement(scheduler.placement(deployed)) # Decide placement for selected container ids
 	decision = replica_decision + decision
 	schedulingTime = time() - start
+
 	recovered_decision = recovery.run_model(stats.time_series, decision)
 	migrations = env.simulationStep(recovered_decision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
+	
+	## Failures injection
+	if env.interval == 5:
+		failuresinfo = workload.generateFailures(env.interval, env.hostlist[0] )
+		pass
+	
+	
 	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
 	print("Deployed:", len(env.getCreationIDs(migrations, deployed)), "of", len(newcontainerinfos), [i[0] for i in newcontainerinfos])
 	print("Destroyed:", len(destroyed), "of", env.getNumActiveContainers())
 	print("Containers in host:", env.getContainersInHosts())
 	print("Num active containers:", env.getNumActiveContainers())
-	print("Host allocation:", [(c.getHostID() if c else -1)for c in env.containerlist])
+	print("Host allocation:", [(c.getHostID() if c else -1) for c in env.containerlist])
 	printDecisionAndMigrations(decision, migrations)
 
 	stats.saveStats(deployed, migrations, destroyed, selected, decision, schedulingTime)
