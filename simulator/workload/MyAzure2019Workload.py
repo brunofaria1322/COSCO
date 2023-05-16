@@ -117,7 +117,20 @@ class MyAzure2019Workload(Workload):
 		self.deployedContainers += [False] * len(workloadlist)
 		return self.getUndeployedContainers()
 	
-	def injectFailure(self, interval, host):
+	## FAILURES INJECTION
+	def getUndeployedFailures(self):
+		undeployed = []
+		for i,deployed in enumerate(self.deployedFailures):
+			if not deployed:
+				undeployed.append(self.createdFailures[i])
+		return undeployed
+
+	def updateDeployedFailures(self, creationIDs):
+		for cid in creationIDs:
+			assert not self.deployedFailures[cid]
+			self.deployedFailures[cid] = True
+
+	def generateFailures(self, interval ,host, max_duration=20):
 		#
 		# layer_type:	0 - edge
 		#				1 - fog
@@ -130,4 +143,15 @@ class MyAzure2019Workload(Workload):
 			index = random.choice(self.possible_indices[host.layer_type])
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
 			df2 = pd.read_csv(self.az_dpath+str(index)+'.csv', header=None)
-			sla = random.gauss(self.meanSLA, self.sigmaSLA)
+			sla = max_duration
+			zeros = [0] * max_duration
+
+			ips = df['CPU capacity provisioned [MHZ]'].to_numpy() * df2.to_numpy()[:, 0] / 100
+			IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:self.max_sla]), int(1.2*sla), interval + sla)
+			RAMModel = RMBitbrain(zeros, zeros, zeros)
+			disk_size  = self.disk_sizes[index % len(self.disk_sizes)]
+			DiskModel = DMBitbrain(disk_size, zeros, zeros)
+			failurelist.append((CreationID, host.layer_type, interval, IPSModel, RAMModel, DiskModel))
+		self.createdFailures += failurelist
+		self.deployedFailures += [False] * len(failurelist)
+		return self.getUndeployedFailures()
