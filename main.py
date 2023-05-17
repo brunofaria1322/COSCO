@@ -101,6 +101,7 @@ def initalizeEnvironment():
 	return datacenter, workload, scheduler, recovery, env, stats
 
 def stepSimulation(workload, scheduler, recovery, env, stats):
+	print(f"STEP {env.interval}")
 	destroyed = env.destroyCompletedContainers()
 	print(f"Destroyed = {[c.id for c in destroyed]}")
 
@@ -132,7 +133,7 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	## Failures injection
 	if env.interval == 5:
 		newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[0])
-		failuresdeployed = env.addFailures(newfailuresinfo)
+		#failuresdeployed = env.addFailures(newfailuresinfo)
 		pass
 	
 	
