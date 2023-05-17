@@ -1,4 +1,3 @@
-from simulator.host.Host import *
 from simulator.host.Disk import *
 from simulator.host.RAM import *
 from simulator.host.Bandwidth import *

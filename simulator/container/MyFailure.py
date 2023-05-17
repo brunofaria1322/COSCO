@@ -19,7 +19,6 @@ class Failure():
 		self.createAt = creationInterval
 		self.startAt = self.env.interval
 		self.totalExecTime = 0
-		self.totalMigrationTime = 0
 		self.active = True
 		self.destroyAt = -1
 		self.lastContainerSize = 0
@@ -56,28 +55,20 @@ class Failure():
 		return self.env.getHostByID(self.hostid)
 
 	def allocate(self, hostID, allocBw):
-		# Migrate if allocated to a different host
-		# Migration time is sum of network latency 
-		# and time to transfer container based on 
-		# network bandwidth and container size.
-		lastMigrationTime = 0
-		if self.hostid != hostID:
-			lastMigrationTime += self.getContainerSize() / allocBw
-			lastMigrationTime += abs(self.env.hostlist[self.hostid].latency - self.env.hostlist[hostID].latency)
+		# Failures are not migrated
 		self.hostid = hostID
-		return lastMigrationTime
+		return 0
 
 	def execute(self, lastMigrationTime):
 		# Migration time is the time to migrate to new host
 		# Thus, execution of task takes place for interval
 		# time - migration time with apparent ips
 		assert self.hostid != -1
-		self.totalMigrationTime += lastMigrationTime
-		execTime = self.env.intervaltime - lastMigrationTime
+		execTime = self.env.intervaltime
 		apparentIPS = self.getApparentIPS()
 		requiredExecTime = (self.ipsmodel.totalInstructions - self.ipsmodel.completedInstructions) / apparentIPS if apparentIPS else 0
 		self.totalExecTime += min(execTime, requiredExecTime)
-		self.ipsmodel.completedInstructions += apparentIPS * min(execTime, requiredExecTime)
+		self.ipsmodel.completedInstructions += apparentIPS * self.totalExecTime
 
 	def allocateAndExecute(self, hostID, allocBw):
 		self.execute(self.allocate(hostID, allocBw))

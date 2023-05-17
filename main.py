@@ -35,11 +35,12 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 5
+NUM_SIM_STEPS = 10
 #HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS =  3 * 2
 
 CONTAINERS = HOSTS * 5
+FAILURES = HOSTS * 5
 ROUTER_BW = 10000
 INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
@@ -77,7 +78,7 @@ def initalizeEnvironment():
 	hostlist = datacenter.generateHosts()
 	
 	print('Initializing simulator...')
-	env = Simulator(ROUTER_BW, scheduler, recovery, CONTAINERS, INTERVAL_TIME, hostlist)
+	env = Simulator(ROUTER_BW, scheduler, recovery, CONTAINERS, FAILURES, INTERVAL_TIME, hostlist)
 
 	# Initialize stats
 	print('Initializing stats...')
@@ -126,15 +127,21 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	decision = replica_decision + decision
 	schedulingTime = time() - start
 
-	recovered_decision = recovery.run_model(stats.time_series, decision)
-	migrations = env.simulationStep(recovered_decision) # Schedule containers
+
+	## Failures injection
+	failuredecision = []
+	if env.interval >= 5:
+		targetID = 0
+		newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
+		failuresdeployed = env.addFailures(newfailuresinfo)
+
+		failuredecision = [(fid, targetID) for fid in failuresdeployed]
+
+	
+	recovereddecision = recovery.run_model(stats.time_series, decision)
+	migrations, failures = env.simulationStep(recovereddecision, failuredecision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
 	
-	## Failures injection
-	if env.interval == 5:
-		newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[0])
-		#failuresdeployed = env.addFailures(newfailuresinfo)
-		pass
 	
 	
 	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
