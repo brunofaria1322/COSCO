@@ -131,7 +131,8 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	
 	## Failures injection
 	if env.interval == 5:
-		failuresinfo = workload.generateFailures(env.interval, env.hostlist[0] )
+		newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[0])
+		failuresdeployed = env.addFailures(newfailuresinfo)
 		pass
 	
 	

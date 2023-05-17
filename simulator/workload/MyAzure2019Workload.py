@@ -130,7 +130,7 @@ class MyAzure2019Workload(Workload):
 			assert not self.deployedFailures[cid]
 			self.deployedFailures[cid] = True
 
-	def generateFailures(self, interval ,host, max_duration=20):
+	def generateNewFailures(self, interval, host, max_duration=20):
 		#
 		# layer_type:	0 - edge
 		#				1 - fog
