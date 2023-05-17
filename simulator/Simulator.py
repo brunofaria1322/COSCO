@@ -33,7 +33,7 @@ class Simulator():
 			self.addHostInit(IPS, RAM, Disk, Bw, Latency, layer_type)
 
 	def addContainerInit(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
-		container = Container(len(self.containerlist), CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
+		container = MyContainer(len(self.containerlist), CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
 		self.containerlist.append(container)
 		return container
 
@@ -49,7 +49,7 @@ class Simulator():
 	def addContainer(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
 		for i,c in enumerate(self.containerlist):
 			if c == None or not c.active:
-				container = Container(i, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
+				container = MyContainer(i, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
 				self.containerlist[i] = container
 				return container
 
