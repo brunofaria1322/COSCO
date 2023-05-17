@@ -1,5 +1,6 @@
 from simulator.host.MyHost import *
 from simulator.container.MyContainer import *
+from simulator.container.MyFailure import *
 
 class Simulator():
 	# Total Router Bw
@@ -14,6 +15,7 @@ class Simulator():
 		self.containerlimit = ContainerLimit
 		self.hostlist = []
 		self.containerlist = []
+		self.failurelist =[]
 		self.intervaltime = IntervalTime
 		self.interval = 0
 		self.inactiveContainers = []
@@ -157,6 +159,31 @@ class Simulator():
 
 	def getContainersInHosts(self):
 		return [len(self.getContainersOfHost(host)) for host in range(self.hostlimit)]
+
+	## FAILURES
+
+	def addFailure(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
+		for i,c in enumerate(self.containerlist):
+			if c == None or not c.active:
+				container = Failure(i, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
+				self.containerlist[i] = container
+				return container
+
+	def addFailureList(self, failureInfoList):
+		deployed = failureInfoList
+		deployedFailures = []
+		for CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel in deployed:
+			dep = self.addFailure(CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel)
+			deployedFailures.append(dep)
+		return [failure.id for failure in deployedFailures]
+
+	def addFailures(self, newFailureList):
+		
+		deployed = self.addFailureList(newFailureList)
+		return deployed
+
+	## END FAILURES
+
 
 	def simulationStep(self, decision):
 		routerBwToEach = self.totalbw / len(decision) if len(decision) > 0 else self.totalbw

@@ -1,5 +1,5 @@
 
-class MyContainer():
+class Failure():
 	# IPS = ips requirement
 	# RAM = ram requirement in MB
 	# Size = container size in MB
@@ -32,9 +32,7 @@ class MyContainer():
 
 	def getApparentIPS(self):
 		if self.hostid == -1: return self.ipsmodel.getMaxIPS()
-		hostBaseIPS = self.getHost().getBaseIPS()
-		hostIPSCap = self.getHost().ipsCap
-		canUseIPS = (hostIPSCap - hostBaseIPS) / len(self.env.getContainersOfHost(self.hostid))
+		canUseIPS = self.getHost().getIPSAvailable() / len(self.env.getContainersOfHost(self.hostid))
 		if canUseIPS < 0:
 			return 0
 		return min(self.ipsmodel.getMaxIPS(), self.getBaseIPS() + canUseIPS)
