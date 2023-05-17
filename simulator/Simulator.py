@@ -5,7 +5,7 @@ from simulator.container.MyFailure import *
 class Simulator():
 	# Total Router Bw
 	# Interval Time in seconds
-	def __init__(self, RouterBw, Scheduler, Recovery, ContainerLimit, IntervalTime, hostinit):
+	def __init__(self, RouterBw, Scheduler, Recovery, ContainerLimit, FailureLimit, IntervalTime, hostinit):
 		self.totalbw = RouterBw
 		self.hostlimit = len(hostinit)
 		self.scheduler = Scheduler
@@ -15,7 +15,7 @@ class Simulator():
 		self.containerlimit = ContainerLimit
 		self.hostlist = []
 		self.containerlist = []
-		self.failurelist =[]
+		self.failurelist = [None] * FailureLimit
 		self.intervaltime = IntervalTime
 		self.interval = 0
 		self.inactiveContainers = []
@@ -163,11 +163,11 @@ class Simulator():
 	## FAILURES
 
 	def addFailure(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
-		for i,c in enumerate(self.containerlist):
+		for i,c in enumerate(self.failurelist):
 			if c == None or not c.active:
-				container = Failure(i, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
-				self.containerlist[i] = container
-				return container
+				failure = Failure(i, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, self, HostID = -1)
+				self.failurelist[i] = failure
+				return failure
 
 	def addFailureList(self, failureInfoList):
 		deployed = failureInfoList
@@ -182,16 +182,18 @@ class Simulator():
 		deployed = self.addFailureList(newFailureList)
 		return deployed
 
+	def getFailuresByID(self, failureID):
+		return self.failurelist[failureID]
 	## END FAILURES
 
 
-	def simulationStep(self, decision):
+	def simulationStep(self, decision, failuresdecison):
 		routerBwToEach = self.totalbw / len(decision) if len(decision) > 0 else self.totalbw
 		migrations = []
 		containerIDsAllocated = []
 		for (cid, hid) in decision:
 			container = self.getContainerByID(cid)
-			currentHostID = self.getContainerByID(cid).getHostID()
+			currentHostID = container.getHostID()
 			currentHost = self.getHostByID(currentHostID)
 			targetHost = self.getHostByID(hid)
 			migrateFromNum = len(self.scheduler.getMigrationFromHost(currentHostID, decision))	# number of containers leaving current host
@@ -207,4 +209,24 @@ class Simulator():
 		for i,container in enumerate(self.containerlist):
 			if container and i not in containerIDsAllocated:
 				container.execute(0)
-		return migrations
+
+		## FAILURES
+		failures = []
+		failureIDsAllocated = []
+		for (fid, hid) in failuresdecison:
+			failure = self.getFailuresByID(fid)
+			currentHostID = failure.getHostID()
+			currentHost = self.getHostByID(currentHostID)
+			targetHost = self.getHostByID(hid)
+			if hid != self.failurelist[fid].hostid:
+				failures.append((fid, hid))
+				failure.allocateAndExecute(hid, allocbw)
+				failureIDsAllocated.append(fid)
+		# destroy pointer to unallocated failures as book-keeping is done by workload model
+		for (fid, hid) in failuresdecison:
+			if self.failurelist[fid].hostid == -1: self.failurelist[fid] = None
+		for i,failure in enumerate(self.failurelist):
+			if failure and i not in failureIDsAllocated:
+				failure.execute(0)
+
+		return migrations, failures
