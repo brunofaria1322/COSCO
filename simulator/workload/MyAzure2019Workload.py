@@ -4,6 +4,7 @@ from simulator.container.RAMModels.RMBitbrain import *
 from simulator.container.DiskModels.DMBitbrain import *
 import random
 import math
+import numpy as np
 from os import path, makedirs, listdir, remove
 import wget
 from zipfile import ZipFile
@@ -46,6 +47,7 @@ class MyAzure2019Workload(Workload):
 		self.num = numContainers
 		dataset_path = 'simulator/workload/datasets/bitbrain/'
 		az_dpath = 'simulator/workload/datasets/azure_2019/'
+		possible_path = 'simulator/workload/indices/'
 		if not path.exists(dataset_path):
 			makedirs(dataset_path)
 			print('Downloading Bitbrain Dataset')
@@ -70,24 +72,32 @@ class MyAzure2019Workload(Workload):
 		self.meanSLA, self.sigmaSLA = 20, 3
 		self.meanSLA, self.sigmaSLA = 3, 0.5
 		self.max_sla = math.ceil(self.meanSLA + 3 *  self.sigmaSLA)
+
+
 		self.possible_indices = [[],[],[]]	# 3 types
-		for i in range(1, 500):
-			df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
-			df2 = pd.read_csv(az_dpath+str(i)+'.csv', header=None)
 
-			ips = df['CPU capacity provisioned [MHZ]'].to_numpy()[:self.max_sla] * df2.to_numpy()[:self.max_sla, 0] / 100
-			temp = ips_multiplier * max(ips)
+		if path.exists(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy"):
+			self.possible_indices = np.load(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy",allow_pickle=True)
 
-			if 400 < temp < 3200:
-				if temp < 800:
-					self.possible_indices[0].append(i)
-				elif temp < 1600:
-					self.possible_indices[1].append(i)
-				elif temp < 3200:
-					self.possible_indices[2].append(i)
+		else:
+			for i in range(1, 500):
+				df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
+				df2 = pd.read_csv(az_dpath+str(i)+'.csv', header=None)
 
-		print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))
-		#exit()		
+				ips = df['CPU capacity provisioned [MHZ]'].to_numpy()[:self.max_sla] * df2.to_numpy()[:self.max_sla, 0] / 100
+				temp = ips_multiplier * max(ips)
+
+				if 400 < temp < 3200:
+					if temp < 800:
+						self.possible_indices[0].append(i)
+					elif temp < 1600:
+						self.possible_indices[1].append(i)
+					elif temp < 3200:
+						self.possible_indices[2].append(i)
+
+			np.save(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy", self.possible_indices)
+
+		print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))		
 
 	def generateNewContainers(self, interval, layer_type = 0):
 		#

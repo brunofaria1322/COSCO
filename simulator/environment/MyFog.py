@@ -61,12 +61,13 @@ class MyFog():
 		hosts = []
 		keys = ['B2s', 'B4ms', 'B8ms']
 		for i in range(self.num_hosts):
-			typeID = keys[i%3]
-			IPS = self.types[typeID]['IPS']
-			Ram = RAM(self.types[typeID]['RAMSize'], self.types[typeID]['RAMRead']*5, self.types[typeID]['RAMWrite']*5)
-			Disk_ = Disk(self.types[typeID]['DiskSize'], self.types[typeID]['DiskRead']*5, self.types[typeID]['DiskWrite']*10)
-			Bw = Bandwidth(self.types[typeID]['BwUp'], self.types[typeID]['BwDown'])
-			#Power = eval(self.types[typeID]['Power']+'()')
-			Latency = self.types[typeID]['Latency']
+			typeID = i%3
+			key = keys[i%3]
+			IPS = self.types[key]['IPS']
+			Ram = RAM(self.types[key]['RAMSize'], self.types[key]['RAMRead']*5, self.types[key]['RAMWrite']*5)
+			Disk_ = Disk(self.types[key]['DiskSize'], self.types[key]['DiskRead']*5, self.types[key]['DiskWrite']*10)
+			Bw = Bandwidth(self.types[key]['BwUp'], self.types[key]['BwDown'])
+			#Power = eval(self.types[key]['Power']+'()')
+			Latency = self.types[key]['Latency']
 			hosts.append((IPS, Ram, Disk_, Bw, Latency, typeID))
 		return hosts
