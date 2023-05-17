@@ -2,7 +2,7 @@ from simulator.host.Disk import *
 from simulator.host.RAM import *
 from simulator.host.Bandwidth import *
 
-class Host():
+class MyHost():
 	# IPS = Million Instructions per second capacity 
 	# RAM = Ram in MB capacity
 	# Disk = Disk characteristics capacity
