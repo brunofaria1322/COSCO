@@ -194,8 +194,8 @@ class Simulator():
 			currentHostID = self.getContainerByID(cid).getHostID()
 			currentHost = self.getHostByID(currentHostID)
 			targetHost = self.getHostByID(hid)
-			migrateFromNum = len(self.scheduler.getMigrationFromHost(currentHostID, decision))
-			migrateToNum = len(self.scheduler.getMigrationToHost(hid, decision))
+			migrateFromNum = len(self.scheduler.getMigrationFromHost(currentHostID, decision))	# number of containers leaving current host
+			migrateToNum = len(self.scheduler.getMigrationToHost(hid, decision))				# number of containers going to target host
 			allocbw = min(targetHost.bwCap.downlink / migrateToNum, currentHost.bwCap.uplink / migrateFromNum, routerBwToEach)
 			if hid != self.containerlist[cid].hostid and self.getPlacementPossible(cid, hid):
 				migrations.append((cid, hid))
