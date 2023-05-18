@@ -149,7 +149,7 @@ class MyAzure2019Workload(Workload):
 
 		failurelist = []
 		for _ in range(1):
-			CreationID = self.creation_id
+			CreationID = self.creationFailure_id
 			index = random.choice(self.possible_indices[host.layer_type])
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
 			df2 = pd.read_csv(self.az_dpath+str(index)+'.csv', header=None)
@@ -162,6 +162,8 @@ class MyAzure2019Workload(Workload):
 			disk_size  = self.disk_sizes[index % len(self.disk_sizes)]
 			DiskModel = DMBitbrain(disk_size, zeros, zeros)
 			failurelist.append((CreationID, host.layer_type, interval, IPSModel, RAMModel, DiskModel))
+			self.creationFailure_id += 1
+
 		self.createdFailures += failurelist
 		self.deployedFailures += [False] * len(failurelist)
 		return self.getUndeployedFailures()

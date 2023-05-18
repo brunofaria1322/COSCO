@@ -161,7 +161,6 @@ class Simulator():
 		return [len(self.getContainersOfHost(host)) for host in range(self.hostlimit)]
 
 	## FAILURES
-
 	def addFailure(self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel):
 		for i,c in enumerate(self.failurelist):
 			if c == None or not c.active:
@@ -177,13 +176,33 @@ class Simulator():
 			deployedFailures.append(dep)
 		return [failure.id for failure in deployedFailures]
 
+	def getFailuresOfHost(self, hostID):
+		failures = []
+		for failure in self.failurelist:
+			if failure and failure.hostid == hostID:
+				failures.append(failure.id)
+		return failures
+	
+	def getFailuresCreationIDs(self, failures, containerIDs):
+		creationIDs = []
+		for decision in failures:
+			if decision[0] in containerIDs: creationIDs.append(self.failurelist[decision[0]].creationID)
+		return creationIDs
+
+	def getFailureByID(self, failureID):
+		return self.failurelist[failureID]
+	
 	def addFailures(self, newFailureList):
-		
 		deployed = self.addFailureList(newFailureList)
 		return deployed
 
-	def getFailuresByID(self, failureID):
-		return self.failurelist[failureID]
+	def clearFailures(self):
+		for i,failure in enumerate(self.failurelist):
+			if not failure: return
+			failure.destroy()
+			self.failurelist[i] = None
+			
+
 	## END FAILURES
 
 
@@ -214,13 +233,13 @@ class Simulator():
 		failures = []
 		failureIDsAllocated = []
 		for (fid, hid) in failuresdecison:
-			failure = self.getFailuresByID(fid)
+			failure = self.getFailureByID(fid)
 			currentHostID = failure.getHostID()
 			currentHost = self.getHostByID(currentHostID)
 			targetHost = self.getHostByID(hid)
 			if hid != self.failurelist[fid].hostid:
 				failures.append((fid, hid))
-				failure.allocateAndExecute(hid, allocbw)
+				failure.allocateAndExecute(hid, 0)
 				failureIDsAllocated.append(fid)
 		# destroy pointer to unallocated failures as book-keeping is done by workload model
 		for (fid, hid) in failuresdecison:
@@ -230,3 +249,6 @@ class Simulator():
 				failure.execute(0)
 
 		return migrations, failures
+	
+#2.05 11%
+#48k

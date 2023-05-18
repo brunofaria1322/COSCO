@@ -35,7 +35,7 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 10
+NUM_SIM_STEPS = 100
 #HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS =  3 * 2
 
@@ -46,6 +46,7 @@ INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 1
 
+RECURRENT_FAULTS = True
 
 def initalizeEnvironment():
 
@@ -130,18 +131,36 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 
 	## Failures injection
 	failuredecision = []
-	if env.interval >= 5:
-		targetID = 0
-		newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
-		failuresdeployed = env.addFailures(newfailuresinfo)
+	failuresdeployed = []
+	if RECURRENT_FAULTS:
+		if env.interval % 20 == 0:
+			# clear all faults
+			env.clearFailures()
 
-		failuredecision = [(fid, targetID) for fid in failuresdeployed]
+		elif env.interval % 20 >= 10 and env.interval % 2 == 0:
+			targetID = 0
+			newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
+			#print(newfailuresinfo)
+			failuresdeployed = env.addFailures(newfailuresinfo)
 
+			failuredecision = [(fid, targetID) for fid in failuresdeployed]
+	
+	else:
+		if env.interval == 5:
+			targetID = 0
+			newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
+			#print(newfailuresinfo)
+			failuresdeployed = env.addFailures(newfailuresinfo)
+
+			failuredecision = [(fid, targetID) for fid in failuresdeployed]
+
+
+	print(f"Failures Deployed = {failuresdeployed}")
 	
 	recovereddecision = recovery.run_model(stats.time_series, decision)
 	migrations, failures = env.simulationStep(recovereddecision, failuredecision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
-	
+	workload.updateDeployedFailures(env.getFailuresCreationIDs(failures, failuresdeployed)) # Update workload deployed using creation IDs
 	
 	
 	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
