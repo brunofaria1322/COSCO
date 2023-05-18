@@ -38,6 +38,11 @@ class MyHost():
 		for containerID in containers:
 			ips += self.env.getContainerByID(containerID).getApparentIPS()
 		# assert int(ips) <= self.ipsCap
+
+		#FAILURES
+		failures = self.env.getFailuresOfHost(self.id)
+		for failureID in failures:
+			ips += self.env.getFailureByID(failureID).getApparentIPS()
 		return int(ips)
 
 	def getIPSAvailable(self):

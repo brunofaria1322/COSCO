@@ -54,12 +54,12 @@ class Failure():
 	def getHost(self):
 		return self.env.getHostByID(self.hostid)
 
-	def allocate(self, hostID, allocBw):
+	def allocate(self, hostID, _):
 		# Failures are not migrated
 		self.hostid = hostID
 		return 0
 
-	def execute(self, lastMigrationTime):
+	def execute(self, _):
 		# Migration time is the time to migrate to new host
 		# Thus, execution of task takes place for interval
 		# time - migration time with apparent ips
