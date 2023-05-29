@@ -43,7 +43,7 @@ class MyHost():
 		failures = self.env.getFailuresOfHost(self.id)
 		for failureID in failures:
 			ips += self.env.getFailureByID(failureID).getApparentIPS()
-		return int(ips)
+		return min(self.ipsCap,int(ips))
 
 	def getIPSAvailable(self):
 		# IPS available is ipsCap - baseIPS

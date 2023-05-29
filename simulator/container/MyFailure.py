@@ -30,8 +30,8 @@ class Failure():
 		return self.ipsmodel.getIPS()
 
 	def getApparentIPS(self):
-		if self.hostid == -1 or len(self.env.getContainersOfHost(self.hostid)) == 0: return self.ipsmodel.getMaxIPS()
-		canUseIPS = self.getHost().getIPSAvailable() / len(self.env.getContainersOfHost(self.hostid))
+		if self.hostid == -1: return self.ipsmodel.getMaxIPS()
+		canUseIPS = self.getHost().getIPSAvailable() / len(self.env.getFailuresOfHost(self.hostid))
 		if canUseIPS < 0:
 			return 0
 		return min(self.ipsmodel.getMaxIPS(), self.getBaseIPS() + canUseIPS)
