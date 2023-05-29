@@ -1,6 +1,8 @@
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -37,9 +39,13 @@ def main():
     host2['failure'] = true_label
     host3['failure'] = true_label
 
+
     # count failures
     print("Class distribution:")
-    print(host1['failure'].value_counts())
+    print("Host1:\n", host1['failure'].value_counts())
+    print("Host2:\n", host2['failure'].value_counts())
+    print("Host3:\n", host3['failure'].value_counts())
+
 
     # train and evaluate only on host1
     metrics = [[], [], [], []]  # accuracy, precision, recall, f1
@@ -99,8 +105,12 @@ def main():
 
     # train with host1 and host2, evaluate on host3
 
+
     # concatenate data
     host1_2 = pd.concat([host1, host2])
+
+    best_f1 = 0
+    best_pred = None
 
     metrics = [[], [], [], []]  # accuracy, precision, recall, f1
     for _ in range(100):
@@ -120,11 +130,43 @@ def main():
         metrics[2].append(recall_score(test.iloc[:, -1], pred))
         metrics[3].append(2 * (metrics[1][-1] * metrics[2][-1]) / (metrics[1][-1] + metrics[2][-1]))
 
+        if metrics[3][-1] > best_f1:
+            best_f1 = metrics[3][-1]
+            best_pred = pred
+
     # boxplot metrics and save
     plt.figure()
     plt.boxplot(metrics)
     plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
     plt.savefig('AI/metrics_12_3.png')
+
+    # plot cpu usage with the color of the confusion label
+    classes = []
+    for i in range(len(best_pred)):
+        if best_pred[i] == test.iloc[:, -1].values[i]:
+            if best_pred[i] == 1:
+                # True Positive
+                classes.append(1)
+            else:
+                # True Negative
+                classes.append(0)
+        else:
+            if best_pred[i] == 1:
+                # False Positive
+                classes.append(3)
+            else:
+                # False Negative
+                classes.append(2)
+
+    colors = ListedColormap(['blue', 'green', 'yellow', 'orange'])
+
+    plt.figure(figsize=(15, 5))
+    scatter = plt.scatter(range(len(best_pred)), host3['cpu'], c=classes, cmap=colors)
+    plt.xlabel('Time')
+    plt.ylabel('CPU usage')
+    plt.legend(handles=scatter.legend_elements()[0], loc="upper left", labels=['True Negative', 'True Positive', 'False Negative', 'False Positive'])
+    
+    plt.savefig('AI/cpu_12_3.png')
 
 
 
