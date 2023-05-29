@@ -41,6 +41,7 @@ class Stats():
 		hostinfo['ramavailable'] = [host.getRAMAvailable() for host in self.env.hostlist]
 		hostinfo['disk'] = [host.getCurrentDisk() for host in self.env.hostlist]
 		hostinfo['diskavailable'] = [host.getDiskAvailable() for host in self.env.hostlist]
+		hostinfo['numfailures'] = [len(self.env.getFailuresOfHost(i)) for i,host in enumerate(self.env.hostlist)]
 		cpulist, ramlist, disklist = hostinfo['cpu'], [i[0] for i in hostinfo['ram']], [i[0] for i in hostinfo['disk']]
 		datapoint = np.concatenate([[cpulist[i], ramlist[i], disklist[i]] for i in range(len(cpulist))]).reshape(1, -1)
 		self.time_series = np.append(self.time_series, datapoint, axis=0)

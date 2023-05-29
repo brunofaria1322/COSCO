@@ -97,7 +97,7 @@ class MyAzure2019Workload(Workload):
 
 			np.save(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy", self.possible_indices)
 
-		print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))		
+		#print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))		
 
 	def generateNewContainers(self, interval, layer_type = 0):
 		#

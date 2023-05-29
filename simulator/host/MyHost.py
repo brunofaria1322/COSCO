@@ -16,7 +16,7 @@ class MyHost():
 		self.latency = Latency
 		self.env = Environment
 		self.layer_type = layer_type # 0 = edge, 1 = fog, 2 = cloud
-		print(f'HOST {ID} with layer Type {layer_type}')
+		#print(f'HOST {ID} with layer Type {layer_type}')
 		
 	def getCPU(self):
 		ips = self.getApparentIPS()

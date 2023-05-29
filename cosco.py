@@ -47,22 +47,24 @@ INTERVAL_TIME = 300 # seconds
 NEW_CONTAINERS = 1
 
 FAULTY = True
-FAULT_RATE = 0.1
+FAULT_RATE = 1.0
 FAULT_TIME = 10
 FAULT_INCREASE_TIME = 2
 RECOVER_TIME = 10
 FAULTY_HOSTS = [0,1,2]
-RECURRENT_FAULTS = True
+ACCUMULATIVE_FAULTS = True
 
-def initalizeEnvironment():
+def initalizeEnvironment(prints= True):
 
 	# Initialize simple fog datacenter
-	print('Initializing environment...')
+	if prints:
+		print('Initializing environment...')
 	''' Can be SimpleFog, BitbrainFog, AzureFog // Datacenter '''
 	datacenter = MyFog(HOSTS)
 
 	# Initialize workload
-	print('Initializing workload...')
+	if prints:
+		print('Initializing workload...')
 	''' Can be SWSD, BWGD2, Azure2017Workload, Azure2019Workload // DFW, AIoTW '''
 	#workload = BWGD2(NEW_CONTAINERS, 1.5)
 	#workload = MyBW(NEW_CONTAINERS)
@@ -70,29 +72,38 @@ def initalizeEnvironment():
 	workload = MyAzure2019Workload(NEW_CONTAINERS)
 
 	# Initialize scheduler
-	print('Initializing scheduler...')
+	if prints:
+		print('Initializing scheduler...')
 	''' Can be LRMMTR, RF, RL, RM, Random, RLRMMTR, TMCR, TMMR, TMMTR, GA, GOBI (arg = 'energy_latency_'+str(HOSTS)) '''
 	#scheduler = GOBIScheduler('energy_latency_'+str(HOSTS)) # GOBIScheduler('energy_latency_'+str(HOSTS))
 	scheduler = MyScheduler()
 
 	# Initialize Failure Detector/Predictor/Recovery
-	print('Initializing recovery...')
+	if prints:
+		print('Initializing recovery...')
 	''' Can be PreGANRecovery, PCFTRecovery, DFTMRecovery, ECLBRecovery, CMODLBRecovery '''
 	recovery = MyRecovery(HOSTS, training = False)
 
 	# Initialize Environment
-	print('Generating hosts...')
+	if prints:
+		print('Generating hosts...')
 	hostlist = datacenter.generateHosts()
-	
-	print('Initializing simulator...')
+
+
+	if prints:
+		print('Initializing simulator...')
 	env = Simulator(ROUTER_BW, scheduler, recovery, CONTAINERS, FAILURES, INTERVAL_TIME, hostlist)
 
+
 	# Initialize stats
-	print('Initializing stats...')
+	if prints:
+		print('Initializing stats...')
 	stats = Stats(env, workload, datacenter, scheduler)
 
+
 	# Execute first step
-	print('Executing first step...')
+	if prints:
+		print('Executing first step...')
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
 	deployed = env.addContainersInit(newcontainerinfos) # Deploy new containers and get container IDs
 	start = time()
@@ -100,18 +111,23 @@ def initalizeEnvironment():
 	schedulingTime = time() - start
 	migrations = env.allocateInit(decision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload allocated using creation IDs
-	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
-	print("Containers in host:", env.getContainersInHosts())
-	print("Schedule:", env.getActiveContainerList())
-	printDecisionAndMigrations(decision, migrations)
+	if prints:
+		print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
+		print("Containers in host:", env.getContainersInHosts())
+		print("Schedule:", env.getActiveContainerList())
+		printDecisionAndMigrations(decision, migrations)
 
 	stats.saveStats(deployed, migrations, [], deployed, decision, schedulingTime)
 	return datacenter, workload, scheduler, recovery, env, stats
 
-def stepSimulation(workload, scheduler, recovery, env, stats):
-	print(f"STEP {env.interval}")
+def stepSimulation(workload, scheduler, recovery, env, stats, prints= True):
+	if prints:
+		print(f"STEP {env.interval}")
+
 	destroyed = env.destroyCompletedContainers()
-	print(f"Destroyed = {[c.id for c in destroyed]}")
+	
+	if prints:
+		print(f"Destroyed = {[c.id for c in destroyed]}")
 
 	# Create new container in the next layer
 	if destroyed:
@@ -122,10 +138,12 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 
 	
 	newcontainerinfos = workload.generateNewContainers(env.interval) # New containers info
-	print([(c[0],c[1]) for c in newcontainerinfos])
+	if prints:
+		print([(c[0],c[1]) for c in newcontainerinfos])
 	deployed = env.addContainers(newcontainerinfos) # Deploy new containers and get container IDs
 	
-	print(f"Deployed = {deployed}")
+	if prints:
+		print(f"Deployed = {deployed}")
 
 	start = time()
 	replica_decision = scheduler.selection() # Select container IDs for migration to replica
@@ -140,21 +158,26 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 	failuresdeployed = []
 
 	CYCLE_TIME = FAULT_TIME + RECOVER_TIME
+	willfail = False
 	if FAULTY:
-		if RECURRENT_FAULTS:
+		if ACCUMULATIVE_FAULTS:
 			if env.interval % CYCLE_TIME == 0:
 				# clear all faults
 				env.clearFailures()
 
 			elif env.interval % CYCLE_TIME >= RECOVER_TIME and env.interval % FAULT_INCREASE_TIME == 0:
 				# inject faults
-				for targetID in FAULTY_HOSTS:
-					#targetID = 0
-					newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
-					#print(newfailuresinfo)
+				if FAULTY_HOSTS:
+					newcontainerinfos = []
+					for targetID in FAULTY_HOSTS:
+						#targetID = 0
+						newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
+
 					failuresdeployed = env.addFailures(newfailuresinfo)
 
-					failuredecision += [(fid, targetID) for fid in failuresdeployed]
+					# When increasing the scenario complexity, the failuredecision list will need to be changed (passing targetID as "parameter"?)
+					failuredecision += [(fid, env.failurelist[fid].getLType()) for fid in failuresdeployed]
+
 		
 		else:
 			if env.interval % CYCLE_TIME == 0:
@@ -163,30 +186,35 @@ def stepSimulation(workload, scheduler, recovery, env, stats):
 
 			elif env.interval % CYCLE_TIME == RECOVER_TIME:
 				#targetID = 0
-				for targetID in FAULTY_HOSTS:
-					#targetID = 0
-					newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
-					#print(newfailuresinfo)
+				
+				if FAULTY_HOSTS:
+					newfailuresinfo=[]
+					for targetID in FAULTY_HOSTS:
+						#targetID = 0
+						newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
+						#print(newfailuresinfo)
+
 					failuresdeployed = env.addFailures(newfailuresinfo)
 
-					failuredecision += [(fid, targetID) for fid in failuresdeployed]
+					failuredecision += [(fid, env.failurelist[fid].getLType()) for fid in failuresdeployed]
 
 
-	print(f"Failures Deployed = {failuresdeployed}")
+	if prints:
+		print(f"Failures Deployed = {failuresdeployed}")
 	
 	recovereddecision = recovery.run_model(stats.time_series, decision)
 	migrations, failures = env.simulationStep(recovereddecision, failuredecision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
 	workload.updateDeployedFailures(env.getFailuresCreationIDs(failures, failuresdeployed)) # Update workload deployed using creation IDs
 	
-	
-	print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
-	print("Deployed:", len(env.getCreationIDs(migrations, deployed)), "of", len(newcontainerinfos), [i[0] for i in newcontainerinfos])
-	print("Destroyed:", len(destroyed), "of", env.getNumActiveContainers())
-	print("Containers in host:", env.getContainersInHosts())
-	print("Num active containers:", env.getNumActiveContainers())
-	print("Host allocation:", [(c.getHostID() if c else -1) for c in env.containerlist])
-	printDecisionAndMigrations(decision, migrations)
+	if prints:
+		print("Deployed containers' creation IDs:", env.getCreationIDs(migrations, deployed))
+		print("Deployed:", len(env.getCreationIDs(migrations, deployed)), "of", len(newcontainerinfos), [i[0] for i in newcontainerinfos])
+		print("Destroyed:", len(destroyed), "of", env.getNumActiveContainers())
+		print("Containers in host:", env.getContainersInHosts())
+		print("Num active containers:", env.getNumActiveContainers())
+		print("Host allocation:", [(c.getHostID() if c else -1) for c in env.containerlist])
+		printDecisionAndMigrations(decision, migrations)
 
 	stats.saveStats(deployed, migrations, destroyed, selected, decision, schedulingTime)
 
@@ -219,5 +247,17 @@ if __name__ == '__main__':
 		print(color.BOLD+"Simulation Interval:", step, color.ENDC)
 		stepSimulation(workload, scheduler, recovery, env, stats)
 		
+
+	saveStats(stats, datacenter, workload, env)
+
+def runCOSCO(prints = False):	
+
+	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(prints)
+
+	for step in range(NUM_SIM_STEPS):
+		if prints:
+			print(color.BOLD+"Simulation Interval:", step, color.ENDC)
+
+		stepSimulation(workload, scheduler, recovery, env, stats, prints)
 
 	saveStats(stats, datacenter, workload, env)
