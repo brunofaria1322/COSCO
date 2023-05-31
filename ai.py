@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import json
 import os
 import matplotlib.pyplot as plt
@@ -17,15 +18,19 @@ hosts_str = ''.join([str(i) for i in FAULTY_HOSTS])
 type_str = 'acc' if ACCUMULATIVE_FAULTS else 'rec'
 
 DATAPATH = f'AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_TIME}rt_{FAULT_INCREASE_TIME}fit_hosts{hosts_str}_{type_str}/'
-CSV_PATH = 'logs/MyFog_MyAzure2019Workload_100_6_30_10000_300_1/hostinfo_with_interval.csv'
+FIGURES_PATH = f'{DATAPATH}/figures/'
+CSV_PATH = f'logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_6_30_10000_300_1/hostinfo_with_interval.csv'
 
 NUMBER_OF_SIMULATIONS = 10
-NUMBER_OF_REPETITIONS = 10
+NUMBER_OF_REPETITIONS = 50
 
 def main():
     # create datapath folder if it doesn't exist
 
     os.makedirs(os.path.dirname(DATAPATH), exist_ok=True)
+    os.makedirs(os.path.dirname(FIGURES_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(FIGURES_PATH+'analysis/'), exist_ok=True)
+    os.makedirs(os.path.dirname(FIGURES_PATH+'metrics/'), exist_ok=True)
 
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = DATAPATH + f"data{i}.csv"
@@ -53,6 +58,7 @@ def main():
         print(f"Evaluating DATA {i+1} of {NUMBER_OF_SIMULATIONS}")
 
         datapath_i = DATAPATH + f"data{i}.csv"
+        metrics_path = FIGURES_PATH+'metrics/'
 
     
         # read data
@@ -66,8 +72,6 @@ def main():
         headers = data.columns
 
         # create copies of data
-        host1 = data
-
         host1 = data.copy()
         host2 = data.copy()
         host3 = data.copy()
@@ -168,20 +172,20 @@ def main():
     plt.figure()
     plt.boxplot(metrics_1)
     plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
-    plt.savefig(f'{DATAPATH}/metrics_1.png')
+    plt.savefig(f'{metrics_path}/metrics_1.png')
 
     # plots for all hosts
     plt.figure()
     plt.boxplot(metrics_all)
     plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
-    plt.savefig(f'{DATAPATH}/metrics_all.png')
+    plt.savefig(f'{metrics_path}/metrics_all.png')
 
     # plots for train on host1 and host2, test on host3
     # boxplot metrics and save
     plt.figure()
     plt.boxplot(metrics_12_3)
     plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
-    plt.savefig(f'{DATAPATH}/metrics_12_3.png')
+    plt.savefig(f'{metrics_path}/metrics_12_3.png')
 
     # plot cpu usage with the color of the confusion label
     classes = []
@@ -209,9 +213,96 @@ def main():
     plt.ylabel('CPU usage')
     plt.legend(handles=scatter.legend_elements()[0], loc="upper left", labels=['True Negative', 'True Positive', 'False Negative', 'False Positive'])
     
-    plt.savefig(f'{DATAPATH}/cpu_12_3.png')
+    plt.savefig(f'{metrics_path}/cpu_12_3.png')
+
+
+def dataanalysis():
+    analysis_path = FIGURES_PATH+'analysis/'
+
+    for i in range(NUMBER_OF_SIMULATIONS):
+        datapath_i = DATAPATH + f"data{i}.csv"
+        data_temp = pd.read_csv(datapath_i)
+
+        num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
+        #print(f'Number of hosts: {num_hosts}')
+
+        data_temp = data_temp.drop(columns=['interval','ram', 'ramavailable', 'disk', 'diskavailable'])
+        # get headers
+        headers = data_temp.columns
+
+        # create list of copies of data
+        data = [data_temp.copy() for _ in range(num_hosts)] 
+
+        for j in range(num_hosts):
+            for header in headers:
+                data[j][header] = data[j][header].apply(lambda x: json.loads(x)[j])
+            
+
+        # count number of failures
+        counts = [list(host['numfailures'].value_counts()) for host in data]
+        
+        num_max_labels = max([len(count)] for count in counts)[0]
+        #print(f'Number of labels: {num_max_labels}')
+
+        plt.figure()
+        fig, ax = plt.subplots(figsize=(10, 5), tight_layout=True)
+        
+        x = np.arange(num_max_labels)
+        x_labels = [str(i) for i in range(num_max_labels)]
+
+        width = 1 / (num_hosts + 1)
+        multiplier = 0
+
+        for h_i in range(num_hosts):
+            offset = width * multiplier
+            multiplier += 1
+            rects = ax.bar(x + offset, counts[h_i], width, label=f'Host {h_i}')
+            #ax.bar_label(rects, padding=3)
+            for rect in rects:
+                height = rect.get_height()
+
+                if height > 0:
+                    ax.annotate(f'{height}', xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom')
+
+
+        ax.set_xlabel('Failure Intensity')
+        ax.set_ylabel('Number of Occurrences')
+        
+        ax.set_xticks(x + width)
+        ax.set_xticklabels(x_labels)
+        ax.legend(loc='upper right')
+        plt.savefig(f'{analysis_path}/failuresdist{i}.png')
 
 
 
 if __name__ == '__main__':
-    main()     
+    #main()
+
+    dataanalysis()
+
+
+
+"""
+
+x = np.arange(len(species))  # the label locations
+width = 0.25  # the width of the bars
+multiplier = 0
+
+fig, ax = plt.subplots(layout='constrained')
+
+for attribute, measurement in penguin_means.items():
+    offset = width * multiplier
+    rects = ax.bar(x + offset, measurement, width, label=attribute)
+    ax.bar_label(rects, padding=3)
+    multiplier += 1
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel('Length (mm)')
+ax.set_title('Penguin attributes by species')
+ax.set_xticks(x + width, species)
+ax.legend(loc='upper left', ncols=3)
+ax.set_ylim(0, 250)
+
+plt.show()
+
+"""
