@@ -223,7 +223,7 @@ def stepSimulation(workload, scheduler, recovery, env, stats, prints= True):
 
 	stats.saveStats(deployed, migrations, destroyed, selected, decision, schedulingTime)
 
-def saveStats(stats, datacenter, workload, env, end=True):
+def saveStats(stats, datacenter, workload, env, save_essential=False):
 	dirname = "logs/" + datacenter.__class__.__name__
 	dirname += "_" + workload.__class__.__name__
 	dirname += "_" + str(NUM_SIM_STEPS) 
@@ -235,9 +235,13 @@ def saveStats(stats, datacenter, workload, env, end=True):
 	if not os.path.exists("logs"): os.mkdir("logs")
 	if os.path.exists(dirname): shutil.rmtree(dirname, ignore_errors=True)
 	os.mkdir(dirname)
-	stats.generateDatasets(dirname)
+
+	if save_essential:
+		stats.generateCompleteDataset(dirname, stats.hostinfo, 'hostinfo')
+		return
 	
-	if not end: return
+	stats.generateDatasets(dirname)
+
 	stats.generateGraphs(dirname)
 	stats.generateCompleteDatasets(dirname)
 	stats.env, stats.workload, stats.datacenter, stats.scheduler = None, None, None, None
@@ -255,7 +259,7 @@ if __name__ == '__main__':
 
 	saveStats(stats, datacenter, workload, env)
 
-def runCOSCO(prints = False):	
+def runCOSCO(prints = False, save_essential = True):	
 
 	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(prints)
 
@@ -265,4 +269,4 @@ def runCOSCO(prints = False):
 
 		stepSimulation(workload, scheduler, recovery, env, stats, prints)
 
-	saveStats(stats, datacenter, workload, env)
+	saveStats(stats, datacenter, workload, env, save_essential = save_essential)
