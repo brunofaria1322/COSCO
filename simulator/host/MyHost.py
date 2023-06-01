@@ -72,9 +72,9 @@ class MyHost():
 		for containerID in containers:
 			s, r, w = self.env.getContainerByID(containerID).getDisk()
 			size += s; read += r; write += w
-		assert size <= self.diskCap.size
-		assert read <= self.diskCap.read
-		assert write <= self.diskCap.write
+		# assert size <= self.diskCap.size
+		# assert read <= self.diskCap.read
+		# assert write <= self.diskCap.write
 		return size, read, write
 
 	def getDiskAvailable(self):

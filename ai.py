@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import numpy as np
 import json
@@ -8,7 +9,7 @@ from matplotlib.colors import ListedColormap
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
 
 
 from cosco import runCOSCO, NUM_SIM_STEPS, FAULTY, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
@@ -21,7 +22,7 @@ DATAPATH = f'AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_
 FIGURES_PATH = f'{DATAPATH}/figures/'
 CSV_PATH = f'logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_6_30_10000_300_1/hostinfo_with_interval.csv'
 
-NUMBER_OF_SIMULATIONS = 10
+NUMBER_OF_SIMULATIONS = 50
 NUMBER_OF_REPETITIONS = 50
 
 def main():
@@ -114,7 +115,7 @@ def main():
             metrics_1[0].append(accuracy_score(test.iloc[:, -1], pred))
             metrics_1[1].append(precision_score(test.iloc[:, -1], pred))
             metrics_1[2].append(recall_score(test.iloc[:, -1], pred))
-            metrics_1[3].append(2 * (metrics_1[1][-1] * metrics_1[2][-1]) / (metrics_1[1][-1] + metrics_1[2][-1]))
+            metrics_1[3].append(0 if metrics_1[1][-1] * metrics_1[2][-1] == 0 else 2 * (metrics_1[1][-1] * metrics_1[2][-1]) / (metrics_1[1][-1] + metrics_1[2][-1]))
 
 
         # TRAIN AND EVALUATE ON ALL HOSTS TOGETHER
@@ -137,7 +138,7 @@ def main():
             metrics_all[0].append(accuracy_score(test.iloc[:, -1], pred))
             metrics_all[1].append(precision_score(test.iloc[:, -1], pred))
             metrics_all[2].append(recall_score(test.iloc[:, -1], pred))
-            metrics_all[3].append(2 * (metrics_all[1][-1] * metrics_all[2][-1]) / (metrics_all[1][-1] + metrics_all[2][-1]))
+            metrics_all[3].append(0 if metrics_all[1][-1] * metrics_all[2][-1] == 0 else 2 * (metrics_all[1][-1] * metrics_all[2][-1]) / (metrics_all[1][-1] + metrics_all[2][-1]))
 
 
         # TRAIN ON HOSTS 1 AND 2, EVALUATE ON HOST 3
@@ -160,12 +161,21 @@ def main():
             metrics_12_3[0].append(accuracy_score(test.iloc[:, -1], pred))
             metrics_12_3[1].append(precision_score(test.iloc[:, -1], pred))
             metrics_12_3[2].append(recall_score(test.iloc[:, -1], pred))
-            metrics_12_3[3].append(2 * (metrics_12_3[1][-1] * metrics_12_3[2][-1]) / (metrics_12_3[1][-1] + metrics_12_3[2][-1]))
+            metrics_12_3[3].append(0 if metrics_12_3[1][-1] * metrics_12_3[2][-1] == 0 else 2 * (metrics_12_3[1][-1] * metrics_12_3[2][-1]) / (metrics_12_3[1][-1] + metrics_12_3[2][-1]))
 
             if metrics_12_3[3][-1] > best_f1:
                 best_f1 = metrics_12_3[3][-1]
                 best_pred = pred
                 best_cpu = test['cpu'].values
+
+
+    # plot histograms for f1 scores
+    plt.figure()
+    plt.hist(metrics_1[3], bins=10, alpha=0.5)
+    plt.hist(metrics_all[3], bins=10, alpha=0.5)
+    plt.hist(metrics_12_3[3], bins=10, alpha=0.5)
+    plt.legend(['Host1', 'All hosts', 'Host1 and Host2'])
+    plt.savefig(f'{metrics_path}/f1_scores.png')
 
 
     # plots for host1
@@ -181,7 +191,6 @@ def main():
     plt.savefig(f'{metrics_path}/metrics_all.png')
 
     # plots for train on host1 and host2, test on host3
-    # boxplot metrics and save
     plt.figure()
     plt.boxplot(metrics_12_3)
     plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
@@ -216,6 +225,88 @@ def main():
     plt.savefig(f'{metrics_path}/cpu_12_3.png')
 
 
+def train_and_evaluate_big_data():
+    data_temp = pd.read_csv(DATAPATH + f"data0.csv")
+
+    num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
+    
+    # create big data dataframe
+    big_data = [pd.DataFrame() for _ in range(num_hosts)]
+
+    for i in range(NUMBER_OF_SIMULATIONS):
+        datapath_i = DATAPATH + f"data{i}.csv"
+        data_temp = pd.read_csv(datapath_i)
+        #print(f'Number of hosts: {num_hosts}')
+
+        data_temp = data_temp.drop(columns=['interval','ram', 'ramavailable', 'disk', 'diskavailable'])
+        # get headers
+        headers = data_temp.columns
+
+        # create list of copies of data
+        data = [data_temp.copy() for _ in range(num_hosts)] 
+
+        for j in range(num_hosts):
+            for header in headers:
+                data[j][header] = data[j][header].apply(lambda x: json.loads(x)[j])
+
+            # append data to big data
+            big_data[j] = big_data[j].append(data[j])
+
+    for i in range(num_hosts):
+        big_data[i] = big_data[i].reset_index(drop=True)
+
+    # train and evaluate
+    metrics = [[], [], [], []]
+    for _ in range(NUMBER_OF_REPETITIONS):
+        # split data
+        train, test = train_test_split(big_data[0], test_size=0.2)
+
+        # train model
+        clf = RandomForestClassifier(n_estimators=100)
+        clf.fit(train.iloc[:, :-1], train.iloc[:, -1])
+
+        # predict
+        pred = clf.predict(test.iloc[:, :-1])
+
+        # evaluate
+        metrics[0].append(accuracy_score(test.iloc[:, -1], pred))
+        metrics[1].append(precision_score(test.iloc[:, -1], pred, average='macro'))
+        metrics[2].append(recall_score(test.iloc[:, -1], pred, average='macro'))
+        metrics[3].append(0 if metrics[1][-1] * metrics[2][-1] == 0 else 2 * (metrics[1][-1] * metrics[2][-1]) / (metrics[1][-1] + metrics[2][-1]))
+
+    # plot metrics
+    plt.figure()
+    plt.boxplot(metrics)
+    plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
+    plt.savefig(f'{FIGURES_PATH}/metrics_big_data.png')
+
+    # train in all data
+    merged_big_data = pd.DataFrame()
+    for i in range(num_hosts):
+        merged_big_data = merged_big_data.append(big_data[i])
+
+    merged_big_data = merged_big_data.reset_index(drop=True)
+    print(merged_big_data.shape)
+
+    # split data
+    train, test = train_test_split(merged_big_data, test_size=0.2)
+
+    # train model
+    clf = RandomForestClassifier(n_estimators=100)
+    clf.fit(train.iloc[:, :-1], train.iloc[:, -1])
+
+    # predict
+    pred = clf.predict(test.iloc[:, :-1])
+
+    # evaluate
+    metrics = []
+    metrics.append(accuracy_score(test.iloc[:, -1], pred))
+    metrics.append(precision_score(test.iloc[:, -1], pred, average='macro'))
+    metrics.append(recall_score(test.iloc[:, -1], pred, average='macro'))
+    metrics.append(0 if metrics[1] * metrics[2] == 0 else 2 * (metrics[1] * metrics[2]) / (metrics[1] + metrics[2]))
+
+    print(metrics)
+
 def dataanalysis():
     analysis_path = FIGURES_PATH+'analysis/'
 
@@ -242,13 +333,17 @@ def dataanalysis():
         counts = [list(host['numfailures'].value_counts()) for host in data]
         
         num_max_labels = max([len(count)] for count in counts)[0]
+
+        for count in counts:
+            while len(count) < num_max_labels:
+                count.append(0)
         #print(f'Number of labels: {num_max_labels}')
 
         plt.figure()
         fig, ax = plt.subplots(figsize=(10, 5), tight_layout=True)
         
         x = np.arange(num_max_labels)
-        x_labels = [str(i) for i in range(num_max_labels)]
+        x_labels = [str(label) for label in range(num_max_labels)]
 
         width = 1 / (num_hosts + 1)
         multiplier = 0
@@ -276,33 +371,13 @@ def dataanalysis():
 
 
 if __name__ == '__main__':
-    #main()
+    time_start = time.time()
+    main()
 
-    dataanalysis()
+    #dataanalysis()
+
+    #train_and_evaluate_big_data()
+
+    print(f'Time taken: {time.time() - time_start}')
 
 
-
-"""
-
-x = np.arange(len(species))  # the label locations
-width = 0.25  # the width of the bars
-multiplier = 0
-
-fig, ax = plt.subplots(layout='constrained')
-
-for attribute, measurement in penguin_means.items():
-    offset = width * multiplier
-    rects = ax.bar(x + offset, measurement, width, label=attribute)
-    ax.bar_label(rects, padding=3)
-    multiplier += 1
-
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('Length (mm)')
-ax.set_title('Penguin attributes by species')
-ax.set_xticks(x + width, species)
-ax.legend(loc='upper left', ncols=3)
-ax.set_ylim(0, 250)
-
-plt.show()
-
-"""
