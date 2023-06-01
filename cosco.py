@@ -35,7 +35,7 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 100
+NUM_SIM_STEPS = 1000
 #HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS =  3 * 2
 
