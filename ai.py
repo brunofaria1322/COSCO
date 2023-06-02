@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
 
 
-from cosco import runCOSCO, NUM_SIM_STEPS, FAULTY, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
+from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
 
 
 hosts_str = ''.join([str(i) for i in FAULTY_HOSTS])
@@ -22,7 +22,7 @@ DATAPATH = f'AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_
 FIGURES_PATH = f'{DATAPATH}/figures/'
 CSV_PATH = f'logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_6_30_10000_300_1/hostinfo_with_interval.csv'
 
-NUMBER_OF_SIMULATIONS = 50
+NUMBER_OF_SIMULATIONS = 30
 NUMBER_OF_REPETITIONS = 50
 
 def main():
@@ -372,9 +372,9 @@ def dataanalysis():
 
 if __name__ == '__main__':
     time_start = time.time()
-    main()
+    #main()
 
-    #dataanalysis()
+    dataanalysis()
 
     #train_and_evaluate_big_data()
 
