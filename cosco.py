@@ -46,11 +46,10 @@ INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 1
 
-FAULTY = True
-FAULT_RATE = 0.3
-FAULT_TIME = 6
+FAULT_RATE = 1.0
+FAULT_TIME = 10
 FAULT_INCREASE_TIME = 2
-RECOVER_TIME = 18
+RECOVER_TIME = 10
 FAULTY_HOSTS = [0,1,2]
 ACCUMULATIVE_FAULTS = True
 
@@ -158,7 +157,7 @@ def stepSimulation(workload, scheduler, recovery, env, stats, prints= True):
 	failuresdeployed = []
 
 	CYCLE_TIME = FAULT_TIME + RECOVER_TIME
-	if FAULTY:
+	if FAULT_RATE:
 		if ACCUMULATIVE_FAULTS:
 			if env.interval % CYCLE_TIME == 0:
 				# clear all faults
@@ -167,10 +166,10 @@ def stepSimulation(workload, scheduler, recovery, env, stats, prints= True):
 			elif env.interval % CYCLE_TIME >= RECOVER_TIME and env.interval % FAULT_INCREASE_TIME == 0:
 				# inject faults
 				if FAULTY_HOSTS :
-					newcontainerinfos = []
+					newfailuresinfo = []
+
 					for targetID in FAULTY_HOSTS:
 
-						newfailuresinfo = []
 						if random.random() < FAULT_RATE:
 							#targetID = 0
 							newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
@@ -191,9 +190,9 @@ def stepSimulation(workload, scheduler, recovery, env, stats, prints= True):
 				
 				if FAULTY_HOSTS:
 					newfailuresinfo=[]
+
 					for targetID in FAULTY_HOSTS:
 						
-						newfailuresinfo = []
 						if random.random() < FAULT_RATE:
 							#targetID = 0
 							newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
