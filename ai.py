@@ -36,12 +36,14 @@ def main():
     # create datapath folder if it doesn't exist
 
     os.makedirs(os.path.dirname(DATAPATH), exist_ok=True)
+    os.makedirs(os.path.dirname(DATAPATH+'data/'), exist_ok=True)
     os.makedirs(os.path.dirname(FIGURES_PATH), exist_ok=True)
     os.makedirs(os.path.dirname(FIGURES_PATH+'analysis/'), exist_ok=True)
     os.makedirs(os.path.dirname(FIGURES_PATH+'metrics/'), exist_ok=True)
 
+
     for i in range(NUMBER_OF_SIMULATIONS):
-        datapath_i = DATAPATH + f"data{i}.csv"
+        datapath_i = f"{DATAPATH}data/data{i}.csv"
         # pass if log file already exists
         if os.path.isfile(datapath_i):
             continue
@@ -51,7 +53,7 @@ def main():
         runCOSCO(prints = False)
 
         # copy log file to datapath
-        os.system(f"cp {CSV_PATH} {DATAPATH}/data{i}.csv")
+        os.system(f"cp {CSV_PATH} {datapath_i}")
 
     # EVALUATING DATA
     metrics_1 = [[], [], [], []]  # accuracy, precision, recall, f1
@@ -62,11 +64,13 @@ def main():
     best_pred = None
     best_cpu = None
 
+    metrics_path = FIGURES_PATH+'metrics/'
+
+
     for i in range(NUMBER_OF_SIMULATIONS):
         print(f"Evaluating DATA {i+1} of {NUMBER_OF_SIMULATIONS}")
 
-        datapath_i = DATAPATH + f"data{i}.csv"
-        metrics_path = FIGURES_PATH+'metrics/'
+        datapath_i = f"{DATAPATH}data/data{i}.csv"
 
     
         # read data
@@ -233,7 +237,7 @@ def main():
 
 
 def train_and_evaluate_big_data():
-    data_temp = pd.read_csv(DATAPATH + f"data0.csv")
+    data_temp = pd.read_csv(f"{DATAPATH}data/data0.csv")
 
     num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
     
@@ -241,7 +245,7 @@ def train_and_evaluate_big_data():
     big_data = [pd.DataFrame() for _ in range(num_hosts)]
 
     for i in range(NUMBER_OF_SIMULATIONS):
-        datapath_i = DATAPATH + f"data{i}.csv"
+        datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
         #print(f'Number of hosts: {num_hosts}')
 
@@ -318,7 +322,7 @@ def dataanalysis():
     analysis_path = FIGURES_PATH+'analysis/'
 
     for i in range(NUMBER_OF_SIMULATIONS):
-        datapath_i = DATAPATH + f"data{i}.csv"
+        datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
 
         num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
@@ -381,7 +385,7 @@ def big_merged_data_eda():
     # load and merge data
     merged_big_data = pd.DataFrame()
     for i in range(NUMBER_OF_SIMULATIONS):
-        datapath_i = DATAPATH + f"data{i}.csv"
+        datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
 
         num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
