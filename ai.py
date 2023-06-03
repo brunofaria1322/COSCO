@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
@@ -13,6 +14,12 @@ from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, r
 
 
 from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
+#from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_INCREASE_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
+
+#FAULT_RATE = 0.3
+#FAULT_TIME = 6
+#RECOVER_TIME = 18
+
 
 
 hosts_str = ''.join([str(i) for i in FAULTY_HOSTS])
@@ -368,7 +375,97 @@ def dataanalysis():
         ax.legend(loc='upper right')
         plt.savefig(f'{analysis_path}/failuresdist{i}.png')
 
+def big_merged_data_eda():
+    # Exploratory Data Analysis on the merged data
 
+    # load and merge data
+    merged_big_data = pd.DataFrame()
+    for i in range(NUMBER_OF_SIMULATIONS):
+        datapath_i = DATAPATH + f"data{i}.csv"
+        data_temp = pd.read_csv(datapath_i)
+
+        num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
+        #print(f'Number of hosts: {num_hosts}')
+
+        data_temp = data_temp.drop(columns=['interval','ram', 'ramavailable', 'disk', 'diskavailable'])
+        # get headers
+        headers = data_temp.columns
+
+        # create list of copies of data
+        data = [data_temp.copy() for _ in range(num_hosts)] 
+
+        for j in range(num_hosts):
+            for header in headers:
+                data[j][header] = data[j][header].apply(lambda x: json.loads(x)[j])
+
+        for j in range(num_hosts):
+            data[j]['host_ltype'] = j
+            merged_big_data = merged_big_data.append(data[j])
+
+    merged_big_data = merged_big_data.reset_index(drop=True)
+    print(merged_big_data.shape)
+
+    # following https://www.digitalocean.com/community/tutorials/exploratory-data-analysis-python
+
+    # 1. Basic Information
+
+    print('INFO')
+    print(merged_big_data.info())
+
+    print('DESCRIPTION')
+    print(merged_big_data.describe())
+
+    # 2. Duplicate Values
+
+    print(f'DUPLICATES: {merged_big_data.duplicated().sum()}')
+
+    # 5. Missing Values
+    print(f'MISSING VALUES:\n{merged_big_data.isnull().sum()}')
+
+    # 10. Correlation Matrix
+    plt.figure()
+    fig, ax = plt.subplots(figsize=(10, 10), tight_layout=True)
+    corr = merged_big_data.corr()
+    sns.heatmap(corr, annot=True, fmt='.2f', ax=ax)
+    plt.savefig(f'{FIGURES_PATH}correlation_matrix.png')
+
+    # Correlation Matrix shows that there is no strong correlation between numfailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
+    # Whith this information, we will try to predict numfailures using all the features and compare it to the results of using only the features that have a correlation with numfailures
+
+    # Train and Evaluate with all features
+    metrics = [[], [], [], []]
+    for _ in range(NUMBER_OF_REPETITIONS):
+        # split data
+        pass
+
+        # train and predict
+
+
+            
+def train_and_evaluate(data, y_col, model):
+    metrics = [[], [], [], []]
+    for _ in range(NUMBER_OF_REPETITIONS):
+        num_classes = len(data[y_col].unique())
+        # split data
+        train, test = train_test_split(data, test_size=0.3)
+
+        x_train = train.drop(columns=[y_col])
+        y_train = train[y_col]
+
+        x_test = test.drop(columns=[y_col])
+        y_test = test[y_col]
+
+        # train and predict
+        model.fit(x_train, y_train)
+        y_pred = model.predict(x_test)
+
+        # evaluate
+        metrics[0].append(accuracy_score(y_test, y_pred))
+        metrics[1].append(precision_score(y_test, y_pred, average='weighted'))
+        metrics[2].append(recall_score(y_test, y_pred, average='weighted'))
+        metrics[3].append(f1_score(y_test, y_pred, average='weighted'))
+
+       
 
 if __name__ == '__main__':
     time_start = time.time()
@@ -377,6 +474,8 @@ if __name__ == '__main__':
     dataanalysis()
 
     #train_and_evaluate_big_data()
+
+    #big_merged_data_eda()
 
     print(f'Time taken: {time.time() - time_start}')
 
