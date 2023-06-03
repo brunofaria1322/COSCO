@@ -10,15 +10,15 @@ from matplotlib.colors import ListedColormap
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 
 
-from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
-#from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_INCREASE_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
+#from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
+from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_INCREASE_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
 
-#FAULT_RATE = 0.3
-#FAULT_TIME = 6
-#RECOVER_TIME = 18
+FAULT_RATE = 0.3
+FAULT_TIME = 6
+RECOVER_TIME = 18
 
 
 
@@ -431,23 +431,32 @@ def big_merged_data_eda():
 
     # Correlation Matrix shows that there is no strong correlation between numfailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
     # Whith this information, we will try to predict numfailures using all the features and compare it to the results of using only the features that have a correlation with numfailures
+    #   wich are [cpu, apparentips]
 
     # Train and Evaluate with all features
-    metrics = [[], [], [], []]
-    for _ in range(NUMBER_OF_REPETITIONS):
-        # split data
-        pass
+    metrics = train_and_evaluate(merged_big_data, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
 
-        # train and predict
+    # plot metrics
+    plot_metrics(metrics, 'big_merged_data_all_features')
+
+    # Train and Evaluate with only the features that have a correlation with numfailures
+    metrics = train_and_evaluate(merged_big_data[['cpu','apparentips', 'numfailures']], 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+
+    # plot metrics
+    plot_metrics(metrics, 'big_merged_data_correlated_features')
+
 
 
             
-def train_and_evaluate(data, y_col, model):
+def train_and_evaluate(data, y_col, model, binary=False):
+
+    if binary:
+        data[y_col] = data[y_col].apply(lambda x: 1 if x > 0 else 0)
+
     metrics = [[], [], [], []]
     for _ in range(NUMBER_OF_REPETITIONS):
-        num_classes = len(data[y_col].unique())
         # split data
-        train, test = train_test_split(data, test_size=0.3)
+        train, test = train_test_split(data, test_size=0.3, shuffle=True)
 
         x_train = train.drop(columns=[y_col])
         y_train = train[y_col]
@@ -461,21 +470,31 @@ def train_and_evaluate(data, y_col, model):
 
         # evaluate
         metrics[0].append(accuracy_score(y_test, y_pred))
-        metrics[1].append(precision_score(y_test, y_pred, average='weighted'))
-        metrics[2].append(recall_score(y_test, y_pred, average='weighted'))
-        metrics[3].append(f1_score(y_test, y_pred, average='weighted'))
+        metrics[1].append(precision_score(y_test, y_pred, average='binary' if binary else 'weighted'))
+        metrics[2].append(recall_score(y_test, y_pred, average='binary' if binary else 'weighted'))
+        metrics[3].append(f1_score(y_test, y_pred, average='binary' if binary else 'weighted'))
 
-       
+    return metrics
+
+def plot_metrics(metrics, name):
+    
+    plt.figure()
+    plt.boxplot(metrics)
+    plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
+    plt.savefig(f'{FIGURES_PATH}metrics/{name}.png')
+
+
+    
 
 if __name__ == '__main__':
     time_start = time.time()
     #main()
 
-    dataanalysis()
+    #dataanalysis()
 
     #train_and_evaluate_big_data()
 
-    #big_merged_data_eda()
+    big_merged_data_eda()
 
     print(f'Time taken: {time.time() - time_start}')
 
