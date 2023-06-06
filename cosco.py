@@ -22,9 +22,6 @@ from simulator.workload.MyAzure2019Workload import *
 # Scheduler imports
 from scheduler.zMyScheduler import MyScheduler
 
-# Recovery imports
-from recovery.zMyRecovery import MyRecovery
-
 
 # Auxiliary imports
 from stats.Stats import *
@@ -35,7 +32,7 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 1000
+NUM_SIM_STEPS = 100
 #HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS =  3 * 2
 
@@ -46,7 +43,7 @@ INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 1
 
-FAULT_RATE = 1.0
+FAULT_RATE = 0.0
 FAULT_TIME = 10
 FAULT_INCREASE_TIME = 2
 RECOVER_TIME = 10
@@ -77,12 +74,6 @@ def initalizeEnvironment(prints= True):
 	#scheduler = GOBIScheduler('energy_latency_'+str(HOSTS)) # GOBIScheduler('energy_latency_'+str(HOSTS))
 	scheduler = MyScheduler()
 
-	# Initialize Failure Detector/Predictor/Recovery
-	if prints:
-		print('Initializing recovery...')
-	''' Can be PreGANRecovery, PCFTRecovery, DFTMRecovery, ECLBRecovery, CMODLBRecovery '''
-	recovery = MyRecovery(HOSTS, training = False)
-
 	# Initialize Environment
 	if prints:
 		print('Generating hosts...')
@@ -91,7 +82,7 @@ def initalizeEnvironment(prints= True):
 
 	if prints:
 		print('Initializing simulator...')
-	env = Simulator(ROUTER_BW, scheduler, recovery, CONTAINERS, FAILURES, INTERVAL_TIME, hostlist)
+	env = Simulator(ROUTER_BW, scheduler, CONTAINERS, FAILURES, INTERVAL_TIME, hostlist)
 
 
 	# Initialize stats
@@ -117,9 +108,9 @@ def initalizeEnvironment(prints= True):
 		printDecisionAndMigrations(decision, migrations)
 
 	stats.saveStats(deployed, migrations, [], deployed, decision, schedulingTime)
-	return datacenter, workload, scheduler, recovery, env, stats
+	return datacenter, workload, scheduler, env, stats
 
-def stepSimulation(workload, scheduler, recovery, env, stats, prints= True):
+def stepSimulation(workload, scheduler, env, stats, prints= True):
 	if prints:
 		print(f"STEP {env.interval}")
 
@@ -206,8 +197,7 @@ def stepSimulation(workload, scheduler, recovery, env, stats, prints= True):
 	if prints:
 		print(f"Failures Deployed = {failuresdeployed}")
 	
-	recovereddecision = recovery.run_model(stats.time_series, decision)
-	migrations, failures = env.simulationStep(recovereddecision, failuredecision) # Schedule containers
+	migrations, failures = env.simulationStep(decision, failuredecision) # Schedule containers
 	workload.updateDeployedContainers(env.getCreationIDs(migrations, deployed)) # Update workload deployed using creation IDs
 	workload.updateDeployedFailures(env.getFailuresCreationIDs(failures, failuresdeployed)) # Update workload deployed using creation IDs
 	
@@ -249,23 +239,23 @@ def saveStats(stats, datacenter, workload, env, save_essential=False):
 	    pickle.dump(stats, handle)
 
 if __name__ == '__main__':
-	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment()
+	datacenter, workload, scheduler, env, stats = initalizeEnvironment()
 
 	for step in range(NUM_SIM_STEPS):
 		print(color.BOLD+"Simulation Interval:", step, color.ENDC)
-		stepSimulation(workload, scheduler, recovery, env, stats)
+		stepSimulation(workload, scheduler, env, stats)
 		
 
 	saveStats(stats, datacenter, workload, env)
 
 def runCOSCO(prints = False, save_essential = True):	
 
-	datacenter, workload, scheduler, recovery, env, stats = initalizeEnvironment(prints)
+	datacenter, workload, scheduler, env, stats = initalizeEnvironment(prints)
 
 	for step in range(NUM_SIM_STEPS):
 		if prints:
 			print(color.BOLD+"Simulation Interval:", step, color.ENDC)
 
-		stepSimulation(workload, scheduler, recovery, env, stats, prints)
+		stepSimulation(workload, scheduler, env, stats, prints)
 
 	saveStats(stats, datacenter, workload, env, save_essential = save_essential)

@@ -64,7 +64,7 @@ class MyFog():
 			typeID = i%3
 			key = keys[i%3]
 			IPS = self.types[key]['IPS']
-			Ram = RAM(self.types[key]['RAMSize'], self.types[key]['RAMRead']*5, self.types[key]['RAMWrite']*5)
+			Ram = RAM(self.types[key]['RAMSize'], self.types[key]['RAMRead'], self.types[key]['RAMWrite'])
 			Disk_ = Disk(self.types[key]['DiskSize'], self.types[key]['DiskRead']*5, self.types[key]['DiskWrite']*10)
 			Bw = Bandwidth(self.types[key]['BwUp'], self.types[key]['BwDown'])
 			#Power = eval(self.types[key]['Power']+'()')

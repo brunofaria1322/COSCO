@@ -118,7 +118,7 @@ class MyAzure2019Workload(Workload):
 			#TODO: ver linha a baixo
 			ips = df['CPU capacity provisioned [MHZ]'].to_numpy() * df2.to_numpy()[:, 0] / 100
 			IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:self.max_sla]), int(1.2*sla), interval + sla)
-			RAMModel = RMBitbrain((df['Memory usage [KB]']/4000).to_list(), (df['Network received throughput [KB/s]']/1000).to_list(), (df['Network transmitted throughput [KB/s]']/1000).to_list())
+			RAMModel = RMBitbrain((df['Memory usage [KB]']/2000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
 			disk_size  = self.disk_sizes[index % len(self.disk_sizes)]
 			DiskModel = DMBitbrain(disk_size, (df['Disk read throughput [KB/s]']/4000).to_list(), (df['Disk write throughput [KB/s]']/12000).to_list())
 			workloadlist.append((CreationID, layer_type, interval, IPSModel, RAMModel, DiskModel))

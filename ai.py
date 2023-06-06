@@ -658,62 +658,40 @@ def test():
     #plot ram from datasets
 
     # read data 1
-    datapath = "logs/100i-noFault/hostinfo_with_interval.csv"
+    datapath = "logs/MyFog_MyAzure2019Workload_100_6_30_10000_300_1/hostinfo_with_interval.csv"
     data = pd.read_csv(datapath)
 
-    headers = ['ram','ramavailable']
+    num_hosts = 3
+
+    headers = ['ram_s','ram_r','ram_w','ramavailable_s','ramavailable_r','ramavailable_w']
 
     data = data[['interval'] + headers]
 
-    host1 = data.copy()
-    host2 = data.copy()
-    host3 = data.copy()
+    hosts = [data.copy() for _ in range(num_hosts)]
 
-    for h in headers:
-        host1[f'{h}_s'] = host1[h].apply(lambda x: ast.literal_eval(x)[0][0])
-        host1[f'{h}_r'] = host1[h].apply(lambda x: ast.literal_eval(x)[0][1])
-        host1[f'{h}_w'] = host1[h].apply(lambda x: ast.literal_eval(x)[0][2])
-        host1.drop(columns=[h], inplace=True)
+    for i in range(num_hosts):
+        for h in headers:
+            hosts[i][h] = hosts[i][h].apply(lambda x: ast.literal_eval(x)[i])
 
-        host2[f'{h}_s'] = host2[h].apply(lambda x: ast.literal_eval(x)[1][0])
-        host2[f'{h}_r'] = host2[h].apply(lambda x: ast.literal_eval(x)[1][1])
-        host2[f'{h}_w'] = host2[h].apply(lambda x: ast.literal_eval(x)[1][2])
-        host2.drop(columns=[h], inplace=True)
+        print(hosts[i].head())
+        print(hosts[i].describe())
 
-        host3[f'{h}_s'] = host3[h].apply(lambda x: ast.literal_eval(x)[2][0])
-        host3[f'{h}_r'] = host3[h].apply(lambda x: ast.literal_eval(x)[2][1])
-        host3[f'{h}_w'] = host3[h].apply(lambda x: ast.literal_eval(x)[2][2])
-        host3.drop(columns=[h], inplace=True)
-
-    print(host1.head())
-    print(host2.head())
-    print(host3.head())
-
-    print(host1.describe())
-    print(host2.describe())
-    print(host3.describe())
     
     # plot with 'interval' as x axis
     
     # polot horizontal line in each plot
     list_ram = [[4295, 17180, 34360], [372., 360., 376.54], [200., 305., 266.75]]
 
-    for h in headers:
-        _, ax = plt.subplots(3, 3, figsize=(15, 10))
+    _, ax = plt.subplots(3, 3, figsize=(15, 10))
+    for i, host in enumerate(hosts):
+        for r in ['ram', 'ramavailable']:
+            for j, hh in enumerate(['s', 'r', 'w']):
+                ax[i][j].axhline(y=list_ram[j][i], color='r', linestyle='-')
+                sns.lineplot(x='interval', y=f'{r}_{hh}', data=host, ax=ax[i][j])
+                
 
-        for j, hh in enumerate(['_s', '_r', '_w']):
-            mull = 5
-            if j == 0:
-                mull = 1
-            ax[0][j].axhline(y=list_ram[j][0]*mull, color='r', linestyle='-')
-            sns.lineplot(x='interval', y=f'{h}{hh}', data=host1, ax=ax[0][j])
-            ax[1][j].axhline(y=list_ram[j][1]*mull, color='r', linestyle='-')
-            sns.lineplot(x='interval', y=f'{h}{hh}', data=host2, ax=ax[1][j])
-            ax[2][j].axhline(y=list_ram[j][2]*mull, color='r', linestyle='-')
-            sns.lineplot(x='interval', y=f'{h}{hh}', data=host3, ax=ax[2][j])
+    plt.savefig('ram.png')
 
-
-        plt.savefig(f'{h}.png')
             
 def train_and_evaluate(data, y_col, model, data_test = None, binary=False):
     """

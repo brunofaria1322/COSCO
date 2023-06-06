@@ -15,7 +15,6 @@ class Stats():
 		self.scheduler = Scheduler
 		#self.simulated_scheduler = GOBIScheduler('energy_latency_'+str(self.datacenter.num_hosts))
 		#self.simulated_scheduler.env = self.env
-		self.time_series = np.zeros((1,3 * len(self.env.hostlist))) # 3 dims: cpu, ram-size, disk-size
 		self.schedule_series = np.zeros((1, len(self.env.containerlist), len(self.env.hostlist)))
 		self.initStats()
 
@@ -37,16 +36,22 @@ class Stats():
 		hostinfo['ipsavailable'] = [host.getIPSAvailable() for host in self.env.hostlist]
 		hostinfo['ipscap'] = [host.ipsCap for host in self.env.hostlist]
 		hostinfo['apparentips'] = [host.getApparentIPS() for host in self.env.hostlist]
-		hostinfo['ram'] = [host.getCurrentRAM() for host in self.env.hostlist]
-		hostinfo['ramavailable'] = [host.getRAMAvailable() for host in self.env.hostlist]
+		#hostinfo['ram'] = [host.getCurrentRAM() for host in self.env.hostlist]
+		rams = [host.getCurrentRAM() for host in self.env.hostlist]
+		hostinfo['ram_s'] = [ram[0] for ram in rams]
+		hostinfo['ram_r'] = [ram[1] for ram in rams]
+		hostinfo['ram_w'] = [ram[2] for ram in rams]
+
+		#hostinfo['ramavailable'] = [host.getRAMAvailable() for host in self.env.hostlist]
+		ramsavailable = [host.getRAMAvailable() for host in self.env.hostlist]
+		hostinfo['ramavailable_s'] = [ram[0] for ram in ramsavailable]
+		hostinfo['ramavailable_r'] = [ram[1] for ram in ramsavailable]
+		hostinfo['ramavailable_w'] = [ram[2] for ram in ramsavailable]
+		
 		hostinfo['disk'] = [host.getCurrentDisk() for host in self.env.hostlist]
 		hostinfo['diskavailable'] = [host.getDiskAvailable() for host in self.env.hostlist]
 		hostinfo['numfailures'] = [len(self.env.getFailuresOfHost(i)) for i,host in enumerate(self.env.hostlist)]
-		cpulist, ramlist, disklist = hostinfo['cpu'], [i[0] for i in hostinfo['ram']], [i[0] for i in hostinfo['disk']]
-		datapoint = np.concatenate([[cpulist[i], ramlist[i], disklist[i]] for i in range(len(cpulist))]).reshape(1, -1)
-		self.time_series = np.append(self.time_series, datapoint, axis=0)
-		#datapoint = np.array([self.env.scheduler.result_cache])
-		#self.schedule_series = np.append(self.schedule_series, datapoint, axis=0)
+		
 		self.hostinfo.append(hostinfo)
 
 	def saveWorkloadInfo(self, deployed, migrations):
@@ -236,13 +241,6 @@ class Stats():
 		df = pd.DataFrame(metric_with_interval, columns=headers)
 		df.to_csv(dirname + '/' + title + '.csv', index=False)
 
-	def generateTimeSeriesDataset(self, dirname):
-		title = 'time_series'
-		np.save(f'{dirname}/time_series.npy', self.time_series)
-		np.save(f'{dirname}/schedule_series.npy', self.schedule_series)
-		headers = np.concatenate([[f'cpu_{i}', f'ram_{i}', f'disk_{i}'] for i in range(len(self.env.hostlist))])
-		df = pd.DataFrame(self.time_series, columns=headers)
-		df.to_csv(dirname + '/' + title + '.csv', index=False)
 
 	def generateDatasetWithInterval(self, dirname, metric, objfunc, metric2=None, objfunc2=None):
 		title = metric + '_' + (metric2 + '_' if metric2 else "") + (objfunc + '_' if objfunc else "") + (objfunc2 + '_' if objfunc2 else "") + 'with_interval' 
@@ -291,6 +289,10 @@ class Stats():
 
 	def generateGraphs(self, dirname):
 		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'cpu')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ram_s')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ram_r')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ram_w')
+		
 		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'numcontainers')
 		# self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'power')
 		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'baseips', 'apparentips')
@@ -299,7 +301,6 @@ class Stats():
 		self.generateGraphsWithInterval(dirname, self.activecontainerinfo, 'container', 'hostalloc')
 		self.generateMetricsWithInterval(dirname)
 		self.generateWorkloadWithInterval(dirname)
-		self.generateTimeSeriesDataset(dirname)
 
 	def generateDatasets(self, dirname):
 		# self.generateDatasetWithInterval(dirname, 'cpu', objfunc='energytotalinterval')

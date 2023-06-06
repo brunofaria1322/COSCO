@@ -5,13 +5,11 @@ from simulator.container.MyFailure import *
 class Simulator():
 	# Total Router Bw
 	# Interval Time in seconds
-	def __init__(self, RouterBw, Scheduler, Recovery, ContainerLimit, FailureLimit, IntervalTime, hostinit):
+	def __init__(self, RouterBw, Scheduler, ContainerLimit, FailureLimit, IntervalTime, hostinit):
 		self.totalbw = RouterBw
 		self.hostlimit = len(hostinit)
 		self.scheduler = Scheduler
 		self.scheduler.setEnvironment(self)
-		self.recovery = Recovery
-		self.recovery.setEnvironment(self)
 		self.containerlimit = ContainerLimit
 		self.hostlist = []
 		self.containerlist = []
