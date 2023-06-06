@@ -50,7 +50,7 @@ class Stats():
 		
 		hostinfo['disk'] = [host.getCurrentDisk() for host in self.env.hostlist]
 		hostinfo['diskavailable'] = [host.getDiskAvailable() for host in self.env.hostlist]
-		hostinfo['numfailures'] = [len(self.env.getFailuresOfHost(i)) for i,host in enumerate(self.env.hostlist)]
+		hostinfo['cpufailures'] = [len(self.env.getFailuresOfHost(i)) for i,host in enumerate(self.env.hostlist)]
 		
 		self.hostinfo.append(hostinfo)
 

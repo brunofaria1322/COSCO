@@ -105,23 +105,23 @@ def evaluate_datasets():
 
         # count failures
         #print("Class distribution:")
-        #print("Host1:\n", host1['numfailures'].value_counts())
-        #print("Host2:\n", host2['numfailures'].value_counts())
-        #print("Host3:\n", host3['numfailures'].value_counts())
+        #print("Host1:\n", host1['cpufailures'].value_counts())
+        #print("Host2:\n", host2['cpufailures'].value_counts())
+        #print("Host3:\n", host3['cpufailures'].value_counts())
 
         # WORK WITH BINARY CLASSIFICATION
-        host1['numfailures'] = host1['numfailures'].apply(lambda x: 1 if x > 0 else 0)
-        host2['numfailures'] = host2['numfailures'].apply(lambda x: 1 if x > 0 else 0)
-        host3['numfailures'] = host3['numfailures'].apply(lambda x: 1 if x > 0 else 0)
+        host1['cpufailures'] = host1['cpufailures'].apply(lambda x: 1 if x > 0 else 0)
+        host2['cpufailures'] = host2['cpufailures'].apply(lambda x: 1 if x > 0 else 0)
+        host3['cpufailures'] = host3['cpufailures'].apply(lambda x: 1 if x > 0 else 0)
 
         #print("Class distribution after binary classification:")
-        #print("Host1:\n", host1['numfailures'].value_counts())
-        #print("Host2:\n", host2['numfailures'].value_counts())
-        #print("Host3:\n", host3['numfailures'].value_counts())
+        #print("Host1:\n", host1['cpufailures'].value_counts())
+        #print("Host2:\n", host2['cpufailures'].value_counts())
+        #print("Host3:\n", host3['cpufailures'].value_counts())
 
 
         # TRAIN AND EVALUATE ONLY ON HOST1
-        metrics_temp, _ = train_and_evaluate(host1, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+        metrics_temp, _ = train_and_evaluate(host1, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
         metrics_1[0].extend(metrics_temp[0])
         metrics_1[1].extend(metrics_temp[1])
         metrics_1[2].extend(metrics_temp[2])
@@ -133,7 +133,7 @@ def evaluate_datasets():
         # concatenate data
         all_hosts = pd.concat([host1, host2, host3])
 
-        metrics_temp, _ = train_and_evaluate(all_hosts, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+        metrics_temp, _ = train_and_evaluate(all_hosts, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
         metrics_all[0].extend(metrics_temp[0])
         metrics_all[1].extend(metrics_temp[1])
         metrics_all[2].extend(metrics_temp[2])
@@ -144,7 +144,7 @@ def evaluate_datasets():
         # concatenate data
         host1_2 = pd.concat([host1, host2])
 
-        metrics_temp, best_info = train_and_evaluate(host1_2, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), data_test=host3, binary=True)
+        metrics_temp, best_info = train_and_evaluate(host1_2, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), data_test=host3, binary=True)
         metrics_12_3[0].extend(metrics_temp[0])
         metrics_12_3[1].extend(metrics_temp[1])
         metrics_12_3[2].extend(metrics_temp[2])
@@ -312,7 +312,7 @@ def dataanalysis():
             
 
         # count number of failures
-        counts = [list(host['numfailures'].value_counts()) for host in data]
+        counts = [list(host['cpufailures'].value_counts()) for host in data]
         
         num_max_labels = max([len(count)] for count in counts)[0]
 
@@ -410,16 +410,16 @@ def big_merged_data_eda():
     sns.heatmap(corr, annot=True, fmt='.4f', ax=ax)
     plt.savefig(f'{big_analysis_path}correlation_matrix.png')
 
-    # Correlation Matrix shows that there is no strong correlation between numfailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
-    # Whith this information, we will try to predict numfailures using all the features and compare it to the results of using only the features that have a correlation with numfailures
+    # Correlation Matrix shows that there is no strong correlation between cpufailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
+    # Whith this information, we will try to predict cpufailures using all the features and compare it to the results of using only the features that have a correlation with cpufailures
     #   wich are [cpu, apparentips]
 
     """
 
     # Train and Evaluate with all features
-    metrics, _ = train_and_evaluate(merged_big_data, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
     # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+    metrics_bin, _ = train_and_evaluate(merged_big_data, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
 
     print(f'''\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
@@ -436,9 +436,9 @@ def big_merged_data_eda():
 
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
     # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
 
     print(f'''\t{'METRICS WITHOUT HOST_LTYPE':<48}\t{'METRICS WITHOUT HOST_LTYPE (binary)':<48}
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
@@ -455,9 +455,9 @@ def big_merged_data_eda():
     
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE AND IPSCAP
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
     # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
 
     print(f'''\t{'METRICS WITHOUT HOST_LTYPE AND IPSCAP':<48}\t{'METRICS WITHOUT HOST_LTYPE AND IPSCAP (binary)':<48}
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
@@ -474,9 +474,9 @@ def big_merged_data_eda():
 
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
     # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
 
     print(f'''\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS':<48}\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (binary)':<48}
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
@@ -492,9 +492,9 @@ def big_merged_data_eda():
     #   std     0.0011    0.0011    0.0011    0.0011                    0.0008    0.0055    0.0067    0.0039
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS BUT WITH SVM
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', SVC(), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', SVC(), binary=False)
     # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', SVC(), binary=True)
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', SVC(), binary=True)
 
     print(f'''{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM)':<56}\tMETRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM) (binary)
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
@@ -511,9 +511,9 @@ def big_merged_data_eda():
     
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
     # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
 
     print(f'''\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE':<48}\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (binary)':<48}
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
@@ -531,9 +531,9 @@ def big_merged_data_eda():
     """
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE BUT WITH SVM
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', SVC(), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', SVC(), binary=False)
     # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', SVC(), binary=True)
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', SVC(), binary=True)
 
     print(f'''{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (SVM)':<56}\tMETRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (SVM) (binary)
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
@@ -549,8 +549,8 @@ def big_merged_data_eda():
     # plot metrics
     #plot_metrics(metrics, 'big_merged_data_all_features')
 
-    # Train and Evaluate with only the features that have a correlation with numfailures
-    #metrics, _ = train_and_evaluate(merged_big_data[['cpu','apparentips', 'numfailures']], 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # Train and Evaluate with only the features that have a correlation with cpufailures
+    #metrics, _ = train_and_evaluate(merged_big_data[['cpu','apparentips', 'cpufailures']], 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
 
     # plot metrics
     #plot_metrics(metrics, 'big_merged_data_correlated_features')
@@ -562,9 +562,9 @@ def big_merged_data_eda():
     # remove outliers? is there any?
 
     """
-    # plot every feature against numfailures
+    # plot every feature against cpufailures
     for feature in merged_big_data.columns:
-        if feature != 'numfailures':
+        if feature != 'cpufailures':
             # 2 subplots:
                 # 1. scatter plot
                 # 2. box plot
@@ -574,16 +574,16 @@ def big_merged_data_eda():
 
 
             # 1. scatter plot
-            sns.scatterplot(x='numfailures', y=feature, data=merged_big_data, ax=ax[0])
+            sns.scatterplot(x='cpufailures', y=feature, data=merged_big_data, ax=ax[0])
 
             # 2. box plot
-            sns.boxplot(x='numfailures', y=feature, data=merged_big_data, ax=ax[1])
+            sns.boxplot(x='cpufailures', y=feature, data=merged_big_data, ax=ax[1])
 
             plt.savefig(f'{big_analysis_path}pairs/{feature}_vs_numfailures.png')
     
     # Pairplot
     plt.figure()
-    sns.pairplot(merged_big_data, hue='numfailures')
+    sns.pairplot(merged_big_data, hue='cpufailures')
     plt.savefig(f'{big_analysis_path}pairs/pairplot.png')
 
     """
@@ -599,10 +599,10 @@ def big_merged_data_eda():
 
     best_features = SelectKBest(score_func=f_classif, k='all')
 
-    fit = best_features.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
 
     dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['numfailures']).columns)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures']).columns)
 
     featureScores = pd.concat([dfcolumns, dfscores], axis=1)
     featureScores.columns = ['Specs', 'Score']
@@ -614,10 +614,10 @@ def big_merged_data_eda():
 
     best_features = SelectKBest(score_func=kendalltau, k='all')
 
-    fit = best_features.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
 
     dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['numfailures']).columns)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures']).columns)
 
     featureScores = pd.concat([dfcolumns, dfscores], axis=1)
     featureScores.columns = ['Specs', 'Score']
@@ -630,10 +630,10 @@ def big_merged_data_eda():
 
     best_features = SelectKBest(score_func=chi2, k='all')
 
-    fit = best_features.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
 
     dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['numfailures']).columns)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures']).columns)
 
     featureScores = pd.concat([dfcolumns, dfscores], axis=1)
     featureScores.columns = ['Specs', 'Score']
@@ -645,11 +645,11 @@ def big_merged_data_eda():
     print('\n---- FEATURE IMPORTANCE ----')
 
     model = ExtraTreesClassifier()
-    model.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+    model.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
 
     print(model.feature_importances_)
 
-    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['numfailures']).columns)
+    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['cpufailures']).columns)
     print(feat_importances.sort_values(ascending=False))
 
 
