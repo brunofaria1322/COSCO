@@ -1,3 +1,4 @@
+import ast
 import time
 import pandas as pd
 import numpy as np
@@ -8,10 +9,12 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
+from sklearn.feature_selection import SelectKBest, chi2, f_classif
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 
+from sklearn.svm import SVC
 
 #from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
 from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_INCREASE_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
@@ -32,7 +35,12 @@ CSV_PATH = f'logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_6_30_10000_300_1/hos
 NUMBER_OF_SIMULATIONS = 30
 NUMBER_OF_REPETITIONS = 50
 
-def main():
+def generate_datasets():
+    """
+    Generates datasets for the AI by calling the COSCO simulator
+    Will generate NUMBER_OF_SIMULATIONS datasets
+
+    """
     # create datapath folder if it doesn't exist
 
     os.makedirs(os.path.dirname(DATAPATH), exist_ok=True)
@@ -44,7 +52,7 @@ def main():
 
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = f"{DATAPATH}data/data{i}.csv"
-        # pass if log file already exists
+        # skip if log file already exists
         if os.path.isfile(datapath_i):
             continue
 
@@ -54,6 +62,8 @@ def main():
 
         # copy log file to datapath
         os.system(f"cp {CSV_PATH} {datapath_i}")
+
+def evaluate_datasets():
 
     # EVALUATING DATA
     metrics_1 = [[], [], [], []]  # accuracy, precision, recall, f1
@@ -111,22 +121,11 @@ def main():
 
 
         # TRAIN AND EVALUATE ONLY ON HOST1
-        for _ in range(NUMBER_OF_REPETITIONS):
-            # split data into train and test
-            train, test = train_test_split(host1, test_size=0.4)
-
-            # train model
-            clf = RandomForestClassifier(n_estimators=100)
-            clf.fit(train.iloc[:, :-1], train.iloc[:, -1])
-
-            # predict
-            pred = clf.predict(test.iloc[:, :-1])
-
-            # evaluate
-            metrics_1[0].append(accuracy_score(test.iloc[:, -1], pred))
-            metrics_1[1].append(precision_score(test.iloc[:, -1], pred))
-            metrics_1[2].append(recall_score(test.iloc[:, -1], pred))
-            metrics_1[3].append(0 if metrics_1[1][-1] * metrics_1[2][-1] == 0 else 2 * (metrics_1[1][-1] * metrics_1[2][-1]) / (metrics_1[1][-1] + metrics_1[2][-1]))
+        metrics_temp, _ = train_and_evaluate(host1, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+        metrics_1[0].extend(metrics_temp[0])
+        metrics_1[1].extend(metrics_temp[1])
+        metrics_1[2].extend(metrics_temp[2])
+        metrics_1[3].extend(metrics_temp[3])
 
 
         # TRAIN AND EVALUATE ON ALL HOSTS TOGETHER
@@ -134,50 +133,28 @@ def main():
         # concatenate data
         all_hosts = pd.concat([host1, host2, host3])
 
-        for _ in range(NUMBER_OF_REPETITIONS):
-            # split data into train and test
-            train, test = train_test_split(all_hosts, test_size=0.4)
-
-            # train model
-            clf = RandomForestClassifier(n_estimators=100)
-            clf.fit(train.iloc[:, :-1], train.iloc[:, -1])
-
-            # predict
-            pred = clf.predict(test.iloc[:, :-1])
-
-            # evaluate
-            metrics_all[0].append(accuracy_score(test.iloc[:, -1], pred))
-            metrics_all[1].append(precision_score(test.iloc[:, -1], pred))
-            metrics_all[2].append(recall_score(test.iloc[:, -1], pred))
-            metrics_all[3].append(0 if metrics_all[1][-1] * metrics_all[2][-1] == 0 else 2 * (metrics_all[1][-1] * metrics_all[2][-1]) / (metrics_all[1][-1] + metrics_all[2][-1]))
-
-
+        metrics_temp, _ = train_and_evaluate(all_hosts, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+        metrics_all[0].extend(metrics_temp[0])
+        metrics_all[1].extend(metrics_temp[1])
+        metrics_all[2].extend(metrics_temp[2])
+        metrics_all[3].extend(metrics_temp[3])
+        
         # TRAIN ON HOSTS 1 AND 2, EVALUATE ON HOST 3
 
         # concatenate data
         host1_2 = pd.concat([host1, host2])
 
-        for _ in range(NUMBER_OF_REPETITIONS):
-            train = host1_2
-            test = host3
+        metrics_temp, best_info = train_and_evaluate(host1_2, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), data_test=host3, binary=True)
+        metrics_12_3[0].extend(metrics_temp[0])
+        metrics_12_3[1].extend(metrics_temp[1])
+        metrics_12_3[2].extend(metrics_temp[2])
+        metrics_12_3[3].extend(metrics_temp[3])
 
-            # train model
-            clf = RandomForestClassifier(n_estimators=100)
-            clf.fit(train.iloc[:, :-1], train.iloc[:, -1])
-
-            # predict
-            pred = clf.predict(test.iloc[:, :-1])
-
-            # evaluate
-            metrics_12_3[0].append(accuracy_score(test.iloc[:, -1], pred))
-            metrics_12_3[1].append(precision_score(test.iloc[:, -1], pred))
-            metrics_12_3[2].append(recall_score(test.iloc[:, -1], pred))
-            metrics_12_3[3].append(0 if metrics_12_3[1][-1] * metrics_12_3[2][-1] == 0 else 2 * (metrics_12_3[1][-1] * metrics_12_3[2][-1]) / (metrics_12_3[1][-1] + metrics_12_3[2][-1]))
-
-            if metrics_12_3[3][-1] > best_f1:
-                best_f1 = metrics_12_3[3][-1]
-                best_pred = pred
-                best_cpu = test['cpu'].values
+    
+        if best_info[1] > best_f1:
+            best_f1 = best_info[1]
+            best_pred = best_info[0]
+            best_cpu = host3['cpu'].values
 
 
     # plot histograms for f1 scores
@@ -190,27 +167,18 @@ def main():
 
 
     # plots for host1
-    plt.figure()
-    plt.boxplot(metrics_1)
-    plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
-    plt.savefig(f'{metrics_path}/metrics_1.png')
+    plot_metrics(metrics_1, 'metrics_1')
 
     # plots for all hosts
-    plt.figure()
-    plt.boxplot(metrics_all)
-    plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
-    plt.savefig(f'{metrics_path}/metrics_all.png')
+    plot_metrics(metrics_all, 'metrics_all')
 
     # plots for train on host1 and host2, test on host3
-    plt.figure()
-    plt.boxplot(metrics_12_3)
-    plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
-    plt.savefig(f'{metrics_path}/metrics_12_3.png')
+    plot_metrics(metrics_12_3, 'metrics_12_3')
 
     # plot cpu usage with the color of the confusion label
     classes = []
     for i in range(len(best_pred)):
-        if best_pred[i] == test.iloc[:, -1].values[i]:
+        if best_pred[i] == best_cpu.iloc[:, -1].values[i]:
             if best_pred[i] == 1:
                 # True Positive
                 classes.append(1)
@@ -321,6 +289,9 @@ def train_and_evaluate_big_data():
 def dataanalysis():
     analysis_path = FIGURES_PATH+'analysis/'
 
+    os.makedirs(os.path.dirname(analysis_path+'failuresdist/'), exist_ok=True)
+
+
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
@@ -377,10 +348,14 @@ def dataanalysis():
         ax.set_xticks(x + width)
         ax.set_xticklabels(x_labels)
         ax.legend(loc='upper right')
-        plt.savefig(f'{analysis_path}/failuresdist{i}.png')
+        plt.savefig(f'{analysis_path}failuresdist/data{i}.png')
 
 def big_merged_data_eda():
     # Exploratory Data Analysis on the merged data
+
+    big_analysis_path = FIGURES_PATH+'analysis/big_merged_data_eda/'
+    os.makedirs(os.path.dirname(big_analysis_path), exist_ok=True)
+    os.makedirs(os.path.dirname(big_analysis_path+'pairs/'), exist_ok=True)
 
     # load and merge data
     merged_big_data = pd.DataFrame()
@@ -413,54 +388,372 @@ def big_merged_data_eda():
 
     # 1. Basic Information
 
-    print('INFO')
+    print('\n---- INFO ----')
     print(merged_big_data.info())
 
-    print('DESCRIPTION')
+    print('\n---- DESCRIPTION ----')
     print(merged_big_data.describe())
 
     # 2. Duplicate Values
 
-    print(f'DUPLICATES: {merged_big_data.duplicated().sum()}')
+    print(f'\n---- DUPLICATES: {merged_big_data.duplicated().sum()}')
 
     # 5. Missing Values
-    print(f'MISSING VALUES:\n{merged_big_data.isnull().sum()}')
+    print(f'\n---- MISSING VALUES ----\n{merged_big_data.isnull().sum()}')
+
+    #"""
 
     # 10. Correlation Matrix
     plt.figure()
-    fig, ax = plt.subplots(figsize=(10, 10), tight_layout=True)
+    fig, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
     corr = merged_big_data.corr()
-    sns.heatmap(corr, annot=True, fmt='.2f', ax=ax)
-    plt.savefig(f'{FIGURES_PATH}correlation_matrix.png')
+    sns.heatmap(corr, annot=True, fmt='.4f', ax=ax)
+    plt.savefig(f'{big_analysis_path}correlation_matrix.png')
 
     # Correlation Matrix shows that there is no strong correlation between numfailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
     # Whith this information, we will try to predict numfailures using all the features and compare it to the results of using only the features that have a correlation with numfailures
     #   wich are [cpu, apparentips]
 
+    """
+
     # Train and Evaluate with all features
-    metrics = train_and_evaluate(merged_big_data, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    metrics, _ = train_and_evaluate(merged_big_data, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data, 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+
+    print(f'''\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
+        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
+        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
+        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
+        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+        ''')
+    
+    #   METRICS ALL FEATURES                                    METRICS ALL FEATURES (binary)
+    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
+    #   mean    0.9535    0.9516    0.9535    0.9523                    0.9645    0.8807    0.8115    0.8446
+    #   median  0.9535    0.9515    0.9535    0.9522                    0.9646    0.8801    0.8120    0.8450
+    #   std     0.0010    0.0011    0.0010    0.0010                    0.0008    0.0053    0.0058    0.0035
+
+
+    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+
+    print(f'''\t{'METRICS WITHOUT HOST_LTYPE':<48}\t{'METRICS WITHOUT HOST_LTYPE (binary)':<48}
+        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
+        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
+        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
+        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+        ''')
+    
+    #   METRICS WITHOUT HOST_LTYPE                              METRICS WITHOUT HOST_LTYPE (binary)
+    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
+    #   mean    0.9644    0.9635    0.9644    0.9637                    0.9647    0.8822    0.8120    0.8456
+    #   median  0.9644    0.9635    0.9644    0.9637                    0.9647    0.8838    0.8126    0.8461
+    #   std     0.0009    0.0009    0.0009    0.0009                    0.0008    0.0065    0.0072    0.0042
+    
+
+    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE AND IPSCAP
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+
+    print(f'''\t{'METRICS WITHOUT HOST_LTYPE AND IPSCAP':<48}\t{'METRICS WITHOUT HOST_LTYPE AND IPSCAP (binary)':<48}
+        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
+        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
+        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
+        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+        ''')
+    
+    #   METRICS WITHOUT HOST_LTYPE AND IPSCAP                   METRICS WITHOUT HOST_LTYPE AND IPSCAP (binary)
+    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
+    #   mean    0.9640    0.9631    0.9640    0.9634                    0.9642    0.8789    0.8106    0.8433
+    #   median  0.9640    0.9632    0.9640    0.9634                    0.9641    0.8800    0.8105    0.8432
+    #   std     0.0008    0.0008    0.0008    0.0008                    0.0009    0.0065    0.0061    0.0041
+
+
+    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+
+    print(f'''\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS':<48}\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (binary)':<48}
+        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
+        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
+        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
+        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+        ''')
+
+    #   METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS          METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (binary)
+    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
+    #   mean    0.9631    0.9622    0.9631    0.9625                    0.9632    0.8730    0.8096    0.8401
+    #   median  0.9631    0.9623    0.9631    0.9626                    0.9632    0.8735    0.8103    0.8398
+    #   std     0.0011    0.0011    0.0011    0.0011                    0.0008    0.0055    0.0067    0.0039
+
+    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS BUT WITH SVM
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', SVC(), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'numfailures', SVC(), binary=True)
+
+    print(f'''{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM)':<56}\tMETRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM) (binary)
+        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
+        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
+        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
+        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+        ''')
+    
+    #   METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM)    METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM) (binary)
+    #           accuracy  precision recall    f1                        accuracy  precision recall    f1        
+    #   mean    0.8813    0.8031    0.8813    0.8263                    0.8837    0.8343    0.0285    0.0551    
+    #   median  0.8817    0.7916    0.8817    0.8267                    0.8835    0.8354    0.0283    0.0548    
+    #   std     0.0020    0.0302    0.0020    0.0029                    0.0018    0.0420    0.0023    0.0043 
+    
+
+    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+
+    print(f'''\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE':<48}\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (binary)':<48}
+        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
+        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
+        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
+        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+        ''')
+    
+    #   METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE    METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (binary)
+    #           accuracy  precision recall    f1                        accuracy  precision recall    f1        
+    #   mean    0.9456    0.9434    0.9456    0.9443                    0.9590    0.8543    0.7901    0.8209    
+    #   median  0.9458    0.9435    0.9458    0.9444                    0.9590    0.8554    0.7897    0.8206    
+    #   std     0.0013    0.0014    0.0013    0.0013                    0.0009    0.0050    0.0059    0.0038    
+    
+    """
+
+    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE BUT WITH SVM
+    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', SVC(), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'numfailures', SVC(), binary=True)
+
+    print(f'''{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (SVM)':<56}\tMETRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (SVM) (binary)
+        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
+        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
+        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
+        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+        ''')
+
+
+    # Train and Evaluate without host_ltype, ipscap, baseips and numcontainers
+    # It was tested but the results were a lot worse
 
     # plot metrics
-    plot_metrics(metrics, 'big_merged_data_all_features')
+    #plot_metrics(metrics, 'big_merged_data_all_features')
 
     # Train and Evaluate with only the features that have a correlation with numfailures
-    metrics = train_and_evaluate(merged_big_data[['cpu','apparentips', 'numfailures']], 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    #metrics, _ = train_and_evaluate(merged_big_data[['cpu','apparentips', 'numfailures']], 'numfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
 
     # plot metrics
-    plot_metrics(metrics, 'big_merged_data_correlated_features')
+    #plot_metrics(metrics, 'big_merged_data_correlated_features')
+
+    #"""
+
+    # Remove ltype and ips cap?
+    # normalize data?
+    # remove outliers? is there any?
+
+    """
+    # plot every feature against numfailures
+    for feature in merged_big_data.columns:
+        if feature != 'numfailures':
+            # 2 subplots:
+                # 1. scatter plot
+                # 2. box plot
+
+            plt.figure()
+            fig, ax = plt.subplots(1,2, figsize=(10, 5), tight_layout=True)
+
+
+            # 1. scatter plot
+            sns.scatterplot(x='numfailures', y=feature, data=merged_big_data, ax=ax[0])
+
+            # 2. box plot
+            sns.boxplot(x='numfailures', y=feature, data=merged_big_data, ax=ax[1])
+
+            plt.savefig(f'{big_analysis_path}pairs/{feature}_vs_numfailures.png')
+    
+    # Pairplot
+    plt.figure()
+    sns.pairplot(merged_big_data, hue='numfailures')
+    plt.savefig(f'{big_analysis_path}pairs/pairplot.png')
+
+    """
+
+
+    # select k best features
+    # https://www.simplilearn.com/tutorials/machine-learning-tutorial/feature-selection-in-machine-learning
+    # the aforementioned tutorial mentions that, for numerical input and categorical output, we should use ANOVA Correlation Coefficient (linear) or Kendall's rank coefficient (non-linear)
+
+    print('\n---- SELECT K BEST FEATURES ----')
+
+    print('\n\t-- ANOVA --')
+
+    best_features = SelectKBest(score_func=f_classif, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['numfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+
+    """
+    print('\n\t-- KENDALL --')
+
+    best_features = SelectKBest(score_func=kendalltau, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['numfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+    """
+
+
+    print('\n\t-- CHI2 --')
+
+    best_features = SelectKBest(score_func=chi2, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['numfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+
+
+    # feature importance
+    print('\n---- FEATURE IMPORTANCE ----')
+
+    model = ExtraTreesClassifier()
+    model.fit(merged_big_data.drop(columns=['numfailures']), merged_big_data['numfailures'])
+
+    print(model.feature_importances_)
+
+    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['numfailures']).columns)
+    print(feat_importances.sort_values(ascending=False))
 
 
 
+def test():
+    #plot ram from datasets
+
+    # read data 1
+    datapath = "logs/100i-noFault/hostinfo_with_interval.csv"
+    data = pd.read_csv(datapath)
+
+    headers = ['ram','ramavailable']
+
+    data = data[['interval'] + headers]
+
+    host1 = data.copy()
+    host2 = data.copy()
+    host3 = data.copy()
+
+    for h in headers:
+        host1[f'{h}_s'] = host1[h].apply(lambda x: ast.literal_eval(x)[0][0])
+        host1[f'{h}_r'] = host1[h].apply(lambda x: ast.literal_eval(x)[0][1])
+        host1[f'{h}_w'] = host1[h].apply(lambda x: ast.literal_eval(x)[0][2])
+        host1.drop(columns=[h], inplace=True)
+
+        host2[f'{h}_s'] = host2[h].apply(lambda x: ast.literal_eval(x)[1][0])
+        host2[f'{h}_r'] = host2[h].apply(lambda x: ast.literal_eval(x)[1][1])
+        host2[f'{h}_w'] = host2[h].apply(lambda x: ast.literal_eval(x)[1][2])
+        host2.drop(columns=[h], inplace=True)
+
+        host3[f'{h}_s'] = host3[h].apply(lambda x: ast.literal_eval(x)[2][0])
+        host3[f'{h}_r'] = host3[h].apply(lambda x: ast.literal_eval(x)[2][1])
+        host3[f'{h}_w'] = host3[h].apply(lambda x: ast.literal_eval(x)[2][2])
+        host3.drop(columns=[h], inplace=True)
+
+    print(host1.head())
+    print(host2.head())
+    print(host3.head())
+
+    print(host1.describe())
+    print(host2.describe())
+    print(host3.describe())
+    
+    # plot with 'interval' as x axis
+    
+    # polot horizontal line in each plot
+    list_ram = [[4295, 17180, 34360], [372., 360., 376.54], [200., 305., 266.75]]
+
+    for h in headers:
+        _, ax = plt.subplots(3, 3, figsize=(15, 10))
+
+        for j, hh in enumerate(['_s', '_r', '_w']):
+            mull = 5
+            if j == 0:
+                mull = 1
+            ax[0][j].axhline(y=list_ram[j][0]*mull, color='r', linestyle='-')
+            sns.lineplot(x='interval', y=f'{h}{hh}', data=host1, ax=ax[0][j])
+            ax[1][j].axhline(y=list_ram[j][1]*mull, color='r', linestyle='-')
+            sns.lineplot(x='interval', y=f'{h}{hh}', data=host2, ax=ax[1][j])
+            ax[2][j].axhline(y=list_ram[j][2]*mull, color='r', linestyle='-')
+            sns.lineplot(x='interval', y=f'{h}{hh}', data=host3, ax=ax[2][j])
+
+
+        plt.savefig(f'{h}.png')
             
-def train_and_evaluate(data, y_col, model, binary=False):
+def train_and_evaluate(data, y_col, model, data_test = None, binary=False):
+    """
+    Train and evaluate a model using the given data and model
+    It will run NUMBER_OF_REPETITIONS times
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        Data to train and evaluate the model
+    y_col : str
+        Name of the column to predict
+    model : sklearn.model
+        Model to train and evaluate
+    data_test : pandas.DataFrame, optional
+        Test data to evaluate the model, by default None
+    binary : bool, optional
+        If True, the data will be converted to binary, by default False
+
+    Returns
+    -------
+    list
+        List of metrics [accuracy, precision, recall, f1]
+    tuple
+        Tuple with the best predicted values and respective f1 score
+    """
 
     if binary:
         data[y_col] = data[y_col].apply(lambda x: 1 if x > 0 else 0)
 
     metrics = [[], [], [], []]
+    best_f1 = 0
+    y_pred_best = None
     for _ in range(NUMBER_OF_REPETITIONS):
-        # split data
-        train, test = train_test_split(data, test_size=0.3, shuffle=True)
+        # split data if test data is not provided
+        if data_test is None:
+            train, test = train_test_split(data, test_size=0.3, shuffle=True)
+        else:
+            train = data
+            test = data_test
 
         x_train = train.drop(columns=[y_col])
         y_train = train[y_col]
@@ -478,9 +771,23 @@ def train_and_evaluate(data, y_col, model, binary=False):
         metrics[2].append(recall_score(y_test, y_pred, average='binary' if binary else 'weighted'))
         metrics[3].append(f1_score(y_test, y_pred, average='binary' if binary else 'weighted'))
 
-    return metrics
+        if metrics[3][-1] > best_f1:
+            best_f1 = metrics[3][-1]
+            y_pred_best = y_pred
+
+    return metrics, (y_pred_best, best_f1)
 
 def plot_metrics(metrics, name):
+    """
+    Plot the metrics
+
+    Parameters
+    ----------
+    metrics : list
+        List of metrics to plot [accuracy, precision, recall, f1]
+    name : str
+        Name of the file to save the plot
+    """
     
     plt.figure()
     plt.boxplot(metrics)
@@ -492,13 +799,16 @@ def plot_metrics(metrics, name):
 
 if __name__ == '__main__':
     time_start = time.time()
-    #main()
+    
+    #generate_datasets()
 
     #dataanalysis()
 
     #train_and_evaluate_big_data()
 
-    big_merged_data_eda()
+    #big_merged_data_eda()
+
+    test()
 
     print(f'Time taken: {time.time() - time_start}')
 
