@@ -174,11 +174,12 @@ class Simulator():
 			deployedFailures.append(dep)
 		return [failure.id for failure in deployedFailures]
 
-	def getFailuresOfHost(self, hostID):
+	def getFailuresOfHost(self, hostID, failureType = None):
 		failures = []
 		for failure in self.failurelist:
 			if failure and failure.hostid == hostID:
-				failures.append(failure.id)
+				if failureType == None or failureType in failure.types:
+					failures.append(failure.id)
 		return failures
 	
 	def getFailuresCreationIDs(self, failures, containerIDs):

@@ -23,6 +23,13 @@ class Failure():
 		self.destroyAt = -1
 		self.lastContainerSize = 0
 
+		self.types = []
+		# if is not list of zeros
+		if set(RAMModel.size_list) != {0}:
+			self.types.append('RAM')
+		if set(IPSModel.ips_list) != {0}:
+			self.types.append('CPU')
+
 	def getLType(self):
 		return self.l_type
 
