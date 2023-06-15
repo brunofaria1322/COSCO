@@ -51,6 +51,10 @@ class MyHost():
 		# the containers
 		return self.ipsCap - self.getBaseIPS()
 
+	def getRAM(self):
+		size, _, _ = self.getCurrentRAM()
+		return 100 * (size / self.ramCap.size)
+
 	def getCurrentRAM(self):
 		size, read, write = 0, 0, 0
 		containers = self.env.getContainersOfHost(self.id)

@@ -32,7 +32,7 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 100
+NUM_SIM_STEPS = 1000
 #HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS =  3 * 2
 
@@ -43,11 +43,12 @@ INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 1
 
-FAULT_RATE = 0.0
-FAULT_TIME = 10
+FAULT_RATE = 0.3
+FAULT_TIME = 6
 FAULT_INCREASE_TIME = 2
-RECOVER_TIME = 10
+RECOVER_TIME = 18
 FAULTY_HOSTS = [0,1,2]
+FAILURE_TYPES = ['CPU', 'RAM']
 ACCUMULATIVE_FAULTS = True
 
 def initalizeEnvironment(prints= True):
@@ -154,7 +155,7 @@ def stepSimulation(workload, scheduler, env, stats, prints= True):
 				# clear all faults
 				env.clearFailures()
 
-			elif env.interval % CYCLE_TIME >= RECOVER_TIME and env.interval % FAULT_INCREASE_TIME == 0:
+			elif env.interval % CYCLE_TIME >= RECOVER_TIME and (env.interval % CYCLE_TIME) - RECOVER_TIME % FAULT_INCREASE_TIME == 0:
 				# inject faults
 				if FAULTY_HOSTS :
 					newfailuresinfo = []
@@ -162,8 +163,14 @@ def stepSimulation(workload, scheduler, env, stats, prints= True):
 					for targetID in FAULTY_HOSTS:
 
 						if random.random() < FAULT_RATE:
-							#targetID = 0
-							newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID])
+							
+							rnd = random.random()
+							if rnd < 0.4:
+								newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID], failure_type = ['CPU'], max_duration = FAULT_TIME)
+							elif rnd < 0.8:
+								newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID], failure_type = ['RAM'], max_duration = FAULT_TIME)
+							else:
+								newfailuresinfo = workload.generateNewFailures(env.interval, env.hostlist[targetID], max_duration = FAULT_TIME)
 
 					failuresdeployed = env.addFailures(newfailuresinfo)
 

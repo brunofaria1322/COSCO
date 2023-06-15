@@ -37,6 +37,7 @@ class Stats():
 		hostinfo['ipscap'] = [host.ipsCap for host in self.env.hostlist]
 		hostinfo['apparentips'] = [host.getApparentIPS() for host in self.env.hostlist]
 		#hostinfo['ram'] = [host.getCurrentRAM() for host in self.env.hostlist]
+		hostinfo['ram'] = [host.getRAM() for host in self.env.hostlist]
 		rams = [host.getCurrentRAM() for host in self.env.hostlist]
 		hostinfo['ram_s'] = [ram[0] for ram in rams]
 		hostinfo['ram_r'] = [ram[1] for ram in rams]
@@ -50,7 +51,9 @@ class Stats():
 		
 		hostinfo['disk'] = [host.getCurrentDisk() for host in self.env.hostlist]
 		hostinfo['diskavailable'] = [host.getDiskAvailable() for host in self.env.hostlist]
-		hostinfo['cpufailures'] = [len(self.env.getFailuresOfHost(i)) for i,host in enumerate(self.env.hostlist)]
+		
+		hostinfo['cpufailures'] = [len(self.env.getFailuresOfHost(i, 'CPU')) for i,host in enumerate(self.env.hostlist)]
+		hostinfo['ramfailures'] = [len(self.env.getFailuresOfHost(i, 'RAM')) for i,host in enumerate(self.env.hostlist)]
 		
 		self.hostinfo.append(hostinfo)
 
@@ -289,6 +292,7 @@ class Stats():
 
 	def generateGraphs(self, dirname):
 		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'cpu')
+		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ram')
 		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ram_s')
 		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ram_r')
 		self.generateGraphsWithInterval(dirname, self.hostinfo, 'host', 'ram_w')

@@ -4,8 +4,9 @@ import pandas as pd
 import numpy as np
 import json
 import os
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+
 from matplotlib.colors import ListedColormap
 
 
@@ -16,23 +17,25 @@ from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precisio
 
 from sklearn.svm import SVC
 
-#from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
-from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_INCREASE_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
+from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, FAILURE_TYPES, ACCUMULATIVE_FAULTS
+#from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_INCREASE_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
 
-FAULT_RATE = 0.3
-FAULT_TIME = 6
-RECOVER_TIME = 18
+#FAULT_RATE = 0.3
+#FAULT_TIME = 6
+#RECOVER_TIME = 18
 
 
 
 hosts_str = ''.join([str(i) for i in FAULTY_HOSTS])
 type_str = 'acc' if ACCUMULATIVE_FAULTS else 'rec'
+fault_type_str = ''.join([str(i[0]).lower() for i in FAILURE_TYPES])
 
-DATAPATH = f'AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_TIME}rt_{FAULT_INCREASE_TIME}fit_hosts{hosts_str}_{type_str}/'
+DATAPATH = f'AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_TIME}rt_{FAULT_INCREASE_TIME}fit_hosts{hosts_str}_{type_str}_{fault_type_str}/'
 FIGURES_PATH = f'{DATAPATH}/figures/'
 CSV_PATH = f'logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_6_30_10000_300_1/hostinfo_with_interval.csv'
 
 NUMBER_OF_SIMULATIONS = 30
+NUMBER_OF_SIMULATIONS = 18
 NUMBER_OF_REPETITIONS = 50
 
 def generate_datasets():
@@ -286,7 +289,7 @@ def train_and_evaluate_big_data():
 
     print(metrics)
 
-def dataanalysis():
+def failure_distribution():
     analysis_path = FIGURES_PATH+'analysis/'
 
     os.makedirs(os.path.dirname(analysis_path+'failuresdist/'), exist_ok=True)
@@ -299,7 +302,7 @@ def dataanalysis():
         num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
         #print(f'Number of hosts: {num_hosts}')
 
-        data_temp = data_temp.drop(columns=['interval','ram', 'ramavailable', 'disk', 'diskavailable'])
+        data_temp = data_temp.drop(columns=['interval', 'disk', 'diskavailable'])
         # get headers
         headers = data_temp.columns
 
@@ -311,15 +314,23 @@ def dataanalysis():
                 data[j][header] = data[j][header].apply(lambda x: json.loads(x)[j])
             
 
-        # count number of failures
-        counts = [list(host['cpufailures'].value_counts()) for host in data]
+        # count number of cpu failures
+        counts_cpu = [list(host['cpufailures'].value_counts()) for host in data]
         
-        num_max_labels = max([len(count)] for count in counts)[0]
+        # count number of ram failures
+        counts_ram = [list(host['ramfailures'].value_counts()) for host in data]
 
-        for count in counts:
+        num_max_labels = max([max([len(count)] for count in counts_cpu)[0], max([len(count) for count in counts_ram])])
+        #print(f'Number of labels: {num_max_labels}')
+
+        for count in counts_cpu:
             while len(count) < num_max_labels:
                 count.append(0)
-        #print(f'Number of labels: {num_max_labels}')
+
+        for count in counts_ram:
+            while len(count) < num_max_labels:
+                count.append(0)
+
 
         plt.figure()
         fig, ax = plt.subplots(figsize=(10, 5), tight_layout=True)
@@ -327,14 +338,27 @@ def dataanalysis():
         x = np.arange(num_max_labels)
         x_labels = [str(label) for label in range(num_max_labels)]
 
-        width = 1 / (num_hosts + 1)
+        width = 1 / ((num_hosts * 2) + 1)
         multiplier = 0
 
         for h_i in range(num_hosts):
             offset = width * multiplier
             multiplier += 1
-            rects = ax.bar(x + offset, counts[h_i], width, label=f'Host {h_i}')
-            #ax.bar_label(rects, padding=3)
+
+            # cpu failures
+            rects = ax.bar(x + offset, counts_cpu[h_i], width, label=f'Host {h_i}')
+            
+            for rect in rects:
+                height = rect.get_height()
+
+                if height > 0:
+                    ax.annotate(f'{height}', xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom')
+
+            offset = width * (multiplier + num_hosts - 1)
+
+            # ram failures
+            rects = ax.bar(x + offset, counts_ram[h_i], width, label=f'Host {h_i}', hatch='//')
+
             for rect in rects:
                 height = rect.get_height()
 
@@ -345,7 +369,7 @@ def dataanalysis():
         ax.set_xlabel('Failure Intensity')
         ax.set_ylabel('Number of Occurrences')
         
-        ax.set_xticks(x + width)
+        ax.set_xticks(x + (num_hosts * 2 - 1) / 2  * width)
         ax.set_xticklabels(x_labels)
         ax.legend(loc='upper right')
         plt.savefig(f'{analysis_path}failuresdist/data{i}.png')
@@ -366,7 +390,7 @@ def big_merged_data_eda():
         num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
         #print(f'Number of hosts: {num_hosts}')
 
-        data_temp = data_temp.drop(columns=['interval','ram', 'ramavailable', 'disk', 'diskavailable'])
+        data_temp = data_temp.drop(columns=['interval', 'disk', 'diskavailable'])
         # get headers
         headers = data_temp.columns
 
@@ -407,7 +431,7 @@ def big_merged_data_eda():
     plt.figure()
     fig, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
     corr = merged_big_data.corr()
-    sns.heatmap(corr, annot=True, fmt='.4f', ax=ax)
+    sns.heatmap(corr, annot=True, fmt='.3f', ax=ax)
     plt.savefig(f'{big_analysis_path}correlation_matrix.png')
 
     # Correlation Matrix shows that there is no strong correlation between cpufailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
@@ -528,7 +552,6 @@ def big_merged_data_eda():
     #   median  0.9458    0.9435    0.9458    0.9444                    0.9590    0.8554    0.7897    0.8206    
     #   std     0.0013    0.0014    0.0013    0.0013                    0.0009    0.0050    0.0059    0.0038    
     
-    """
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE BUT WITH SVM
     metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', SVC(), binary=False)
@@ -542,6 +565,7 @@ def big_merged_data_eda():
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         ''')
 
+    """
 
     # Train and Evaluate without host_ltype, ipscap, baseips and numcontainers
     # It was tested but the results were a lot worse
@@ -593,16 +617,58 @@ def big_merged_data_eda():
     # https://www.simplilearn.com/tutorials/machine-learning-tutorial/feature-selection-in-machine-learning
     # the aforementioned tutorial mentions that, for numerical input and categorical output, we should use ANOVA Correlation Coefficient (linear) or Kendall's rank coefficient (non-linear)
 
-    print('\n---- SELECT K BEST FEATURES ----')
+    print('\n---- SELECT K BEST FEATURES - RAM ----')
 
     print('\n\t-- ANOVA --')
 
     best_features = SelectKBest(score_func=f_classif, k='all')
 
-    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
 
     dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures']).columns)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+
+    print('\n\t-- CHI2 --')
+
+    best_features = SelectKBest(score_func=chi2, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+
+
+    # feature importance
+    print('\n---- FEATURE IMPORTANCE ----')
+
+    model = ExtraTreesClassifier()
+    model.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    print(model.feature_importances_)
+
+    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+    print(feat_importances.sort_values(ascending=False))
+
+    print('\n---- SELECT K BEST FEATURES - CPU ----')
+
+    print('\n\t-- ANOVA --')
+
+    best_features = SelectKBest(score_func=f_classif, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
 
     featureScores = pd.concat([dfcolumns, dfscores], axis=1)
     featureScores.columns = ['Specs', 'Score']
@@ -614,10 +680,10 @@ def big_merged_data_eda():
 
     best_features = SelectKBest(score_func=kendalltau, k='all')
 
-    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
 
     dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures']).columns)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
 
     featureScores = pd.concat([dfcolumns, dfscores], axis=1)
     featureScores.columns = ['Specs', 'Score']
@@ -630,10 +696,10 @@ def big_merged_data_eda():
 
     best_features = SelectKBest(score_func=chi2, k='all')
 
-    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
 
     dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures']).columns)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
 
     featureScores = pd.concat([dfcolumns, dfscores], axis=1)
     featureScores.columns = ['Specs', 'Score']
@@ -645,11 +711,11 @@ def big_merged_data_eda():
     print('\n---- FEATURE IMPORTANCE ----')
 
     model = ExtraTreesClassifier()
-    model.fit(merged_big_data.drop(columns=['cpufailures']), merged_big_data['cpufailures'])
+    model.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
 
     print(model.feature_importances_)
 
-    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['cpufailures']).columns)
+    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
     print(feat_importances.sort_values(ascending=False))
 
 
@@ -780,13 +846,13 @@ if __name__ == '__main__':
     
     #generate_datasets()
 
-    #dataanalysis()
+    ##failure_distribution()
 
     #train_and_evaluate_big_data()
 
-    #big_merged_data_eda()
+    big_merged_data_eda()
 
-    test()
+    #test()
 
     print(f'Time taken: {time.time() - time_start}')
 
