@@ -23,15 +23,15 @@ import concurrent.futures
 
 # Intel Pentium III gives 2054 MIPS at 600 MHz
 # Source: https://archive.vn/20130205075133/http://www.tomshardware.com/charts/cpu-charts-2004/Sandra-CPU-Dhrystone,449.html
-#ips_multiplier = 2054.0 / (2 * 600)
+ips_multiplier = 2054.0 / (2 * 600)
 
 # Found:  0.36363636363636365 40.4040404040404 73 [30, 28, 15]
-ips_multiplier = 1 / 0.20711071107110712
-ram_multiplier = 1 / 62.511251125112516
+#ips_multiplier = 1 / 0.20711071107110712
+#ram_multiplier = 1 / 62.511251125112516
 
 # Found:  0.4141641641641642 89.13913913913913 78 [31, 35, 12]
-ips_multiplier = 1 / 0.4141641641641642
-ram_multiplier = 1 / 89.13913913913913
+#ips_multiplier = 1 / 0.4141641641641642
+#ram_multiplier = 1 / 89.13913913913913
 
 def createfiles(df):
 	vmids = df[1].unique()[:1000].tolist()
@@ -106,17 +106,17 @@ class MyAzure2019Workload(Workload):
 				ram = df['Memory usage [KB]'].to_numpy()[:self.max_sla]
 
 				temp_ips = ips_multiplier * np.max(ips)
-				temp_ram = ram_multiplier * np.median(ram)
+				temp_ram = np.max(ram) / 2000
 				
-				if 400 < temp_ips < 3200 and 400 < temp_ram < 6800:
+				if 400 < temp_ips < 3200:
 					if temp_ips < 800:
-						if temp_ram < 1200:
+						if temp_ram < 2100:
 							self.possible_indices[0].append(i)
 					elif temp_ips < 1600:
-						if 1200 <= temp_ram < 3400:
+						if temp_ram < 8500:
 							self.possible_indices[1].append(i)
 					else:
-						if 3400 <= temp_ram:
+						if temp_ram < 17000:
 							self.possible_indices[2].append(i)
 				
 
