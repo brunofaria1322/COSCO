@@ -89,6 +89,7 @@ class MyAzure2019Workload(Workload):
 		self.disk_sizes = [1, 2, 3]
 		self.meanSLA, self.sigmaSLA = 20, 3
 		self.meanSLA, self.sigmaSLA = 3, 0.5
+		self.meanSLA, self.sigmaSLA = 5, 5
 		self.max_sla = math.ceil(self.meanSLA + 3 *  self.sigmaSLA)
 
 
@@ -108,15 +109,15 @@ class MyAzure2019Workload(Workload):
 				temp_ips = ips_multiplier * np.max(ips)
 				temp_ram = np.max(ram) / 2000
 				
-				if 400 < temp_ips < 3200:
-					if temp_ips < 800:
-						if temp_ram < 2100:
+				if 100 < temp_ips < 800:
+					if temp_ips < 200:
+						if temp_ram < 400:
 							self.possible_indices[0].append(i)
-					elif temp_ips < 1600:
-						if temp_ram < 8500:
+					elif temp_ips < 400:
+						if temp_ram < 1700:
 							self.possible_indices[1].append(i)
 					else:
-						if temp_ram < 17000:
+						if temp_ram < 3400:
 							self.possible_indices[2].append(i)
 				
 
@@ -132,9 +133,11 @@ class MyAzure2019Workload(Workload):
 		#				2 - cloud
 		#
 		workloadlist = []
-		#for i in range(max(1,int(gauss(self.mean, self.sigma)))):
 		# generates 1 container per interval
-		for _ in range(1):
+		#for _ in range(1):
+
+		# poisson arrival with mean 1.5
+		for _ in range(np.random.poisson(1.5)):
 			CreationID = self.creation_id
 			#index = self.possible_indices[randint(0,len(self.possible_indices)-1)]
 			index = random.choice(self.possible_indices[layer_type])
@@ -224,7 +227,7 @@ def test1():
 	print('min and max ips', np.min(all_ips), np.max(all_ips))
 	print('min and max rams', np.min(all_rams), np.max(all_rams))
 
-		# check for all ips and rams
+	# check for all ips and rams
 	mins_ram = np.array([400, 1200, 3400])
 	maxs_ram = np.array([1200, 3400, 6800])
 
