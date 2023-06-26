@@ -93,19 +93,19 @@ class Simulator():
 		ramsizeav, ramreadav, ramwriteav = host.getRAMAvailable()
 		disksizeav, diskreadav, diskwriteav = host.getDiskAvailable()
 
-		"""
+		
 		if ipsreq > ipsavailable:
 			print(f'IPS: {ipsreq} > {ipsavailable}')
-			exit()
+			#exit()
 
 		if ramsizereq > ramsizeav:
 			print(f'RAM: {ramsizereq} > {ramsizeav}')
-			exit()
+			#exit()
 
 		if disksizereq > disksizeav:
 			print(f'Disk: {disksizereq} > {disksizeav}')
-			exit()
-		"""
+			#exit()
+		
 
 		return (ipsreq <= ipsavailable and \
 				ramsizereq <= ramsizeav and \

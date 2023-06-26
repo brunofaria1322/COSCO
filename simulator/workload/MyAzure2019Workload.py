@@ -23,7 +23,8 @@ import concurrent.futures
 
 # Intel Pentium III gives 2054 MIPS at 600 MHz
 # Source: https://archive.vn/20130205075133/http://www.tomshardware.com/charts/cpu-charts-2004/Sandra-CPU-Dhrystone,449.html
-ips_multiplier = 2054.0 / (2 * 600)
+#ips_multiplier = 2054.0 / (2 * 600)
+ips_multiplier = 1
 
 # Found:  0.36363636363636365 40.4040404040404 73 [30, 28, 15]
 #ips_multiplier = 1 / 0.20711071107110712
@@ -54,6 +55,9 @@ class MyAzure2019Workload(Workload):
 		#start_time = time()
 		#test1()
 		#print(f"Time taken: {time() - start_time}")
+		#exit()
+
+		#test2()
 		#exit()
 
 		## FAILURES
@@ -88,9 +92,8 @@ class MyAzure2019Workload(Workload):
 		self.az_dpath = az_dpath
 		self.disk_sizes = [1, 2, 3]
 		self.meanSLA, self.sigmaSLA = 20, 3
-		self.meanSLA, self.sigmaSLA = 3, 0.5
-		self.meanSLA, self.sigmaSLA = 5, 5
-		self.max_sla = math.ceil(self.meanSLA + 3 *  self.sigmaSLA)
+		self.meanSLA, self.sigmaSLA = 4, 1
+		self.max_sla = round(self.meanSLA + 4 * self.sigmaSLA) # it cathes 99.9% of the data
 
 
 		self.possible_indices = [[],[],[]]	# 3 types
@@ -99,6 +102,11 @@ class MyAzure2019Workload(Workload):
 			self.possible_indices = np.load(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy",allow_pickle=True)
 
 		else:
+			cpus_ips = [4029, 8102, 16111]	# from MyFog
+			rams = [4295, 17180, 34360]		# from MyFog
+			max_containers = [20, 30, 50]	# manually
+
+			all_ips = []
 			for i in range(1, 500):
 				df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
 				df2 = pd.read_csv(az_dpath+str(i)+'.csv', header=None)
@@ -106,24 +114,61 @@ class MyAzure2019Workload(Workload):
 				ips = df['CPU capacity provisioned [MHZ]'].to_numpy()[:self.max_sla] * df2.to_numpy()[:self.max_sla, 0] / 100
 				ram = df['Memory usage [KB]'].to_numpy()[:self.max_sla]
 
-				temp_ips = ips_multiplier * np.max(ips)
-				temp_ram = np.max(ram) / 2000
+				temp_ips = ips_multiplier * np.max(ips) * 0.9
+				all_ips.append(temp_ips)
+				temp_ram = np.max(ram) / 4000
 				
-				if 100 < temp_ips < 800:
-					if temp_ips < 200:
-						if temp_ram < 400:
-							self.possible_indices[0].append(i)
-					elif temp_ips < 400:
-						if temp_ram < 1700:
-							self.possible_indices[1].append(i)
-					else:
-						if temp_ram < 3400:
-							self.possible_indices[2].append(i)
 				
+				if cpus_ips[0]*0.01 < temp_ips < cpus_ips[0]/max_containers[0] and temp_ram < rams[0]*0.1:
+						self.possible_indices[0].append(i)
+				if cpus_ips[1]*0.01 < temp_ips < cpus_ips[1]/max_containers[1] and temp_ram < rams[1]*0.1:
+						self.possible_indices[1].append(i)
+				if cpus_ips[2]*0.01 < temp_ips < cpus_ips[2]/max_containers[2] and temp_ram < rams[2]*0.1:
+						self.possible_indices[2].append(i)
+
+				"""
+						
+				if cpus_ips[0]*0.001 < temp_ips < cpus_ips[0]*0.01 and temp_ram < rams[0]*0.1:
+						self.possible_indices[0].append(i)
+						self.possible_indices[1].append(i)
+						self.possible_indices[2].append(i)
+
+				
+						
+
+			# histogram of all ips, x from 0 to n_max
+			from matplotlib import pyplot as plt
+
+			n_max = np.ceil(cpus_ips[2]/max_containers[2])
+			n_min = np.floor(cpus_ips[0]*0.01)
+
+			plt.figure(figsize=(10,10))
+
+			plt.subplot(2,1,1)
+			temp = [i for i in all_ips if n_min<i<n_max]
+			plt.hist(temp, bins=1000)
+
+			print(f'count1={len(temp)}')
+
+			plt.subplot(2,1,2)
+			temp = [i * 2054.0 / (2 * 600) for i in all_ips if n_min < i * 2054.0 / (2 * 600) < n_max]
+			plt.hist(temp, bins=1000)
+			plt.savefig("all_ips.png")
+
+			print(f'count2={len(temp)}')
+
+			exit()
+				
+			"""
+
+			
 
 			np.save(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy", self.possible_indices)
 
-		print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))	
+
+		print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))
+
+		#exit()
 
 
 	def generateNewContainers(self, interval, layer_type = 0):
@@ -137,21 +182,26 @@ class MyAzure2019Workload(Workload):
 		#for _ in range(1):
 
 		# poisson arrival with mean 1.5
-		for _ in range(np.random.poisson(1.5)):
+		for _ in range(max(1,np.random.poisson(self.num))):
 			CreationID = self.creation_id
 			#index = self.possible_indices[randint(0,len(self.possible_indices)-1)]
 			index = random.choice(self.possible_indices[layer_type])
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
 			df2 = pd.read_csv(self.az_dpath+str(index)+'.csv', header=None)
-			sla = random.gauss(self.meanSLA, self.sigmaSLA)
+			sla = round(random.gauss(self.meanSLA, self.sigmaSLA))
 			#TODO: ver linha a baixo
 			ips = df['CPU capacity provisioned [MHZ]'].to_numpy() * df2.to_numpy()[:, 0] / 100
-			IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max(int(1.2*sla),self.max_sla)]), int(1.2*sla), interval + sla)
-			RAMModel = RMBitbrain((df['Memory usage [KB]']/2000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
+			IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max(sla,self.max_sla)]), sla, interval + sla)
+			RAMModel = RMBitbrain((df['Memory usage [KB]']/4000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
 			disk_size  = self.disk_sizes[index % len(self.disk_sizes)]
 			DiskModel = DMBitbrain(disk_size, (df['Disk read throughput [KB/s]']/4000).to_list(), (df['Disk write throughput [KB/s]']/12000).to_list())
 			workloadlist.append((CreationID, layer_type, interval, IPSModel, RAMModel, DiskModel))
 			self.creation_id += 1
+
+			# if layer_type != 0 we want to leave the loop, because we only want to generate 1 container
+			if layer_type != 0:
+				break
+
 		self.createdContainers += workloadlist
 		self.deployedContainers += [False] * len(workloadlist)
 		return self.getUndeployedContainers()
@@ -177,7 +227,7 @@ class MyAzure2019Workload(Workload):
 		#
 
 		failurelist = []
-		for _ in range(1):
+		for _ in range(2):
 			CreationID = self.creationFailure_id
 			index = random.choice(self.possible_indices[host.layer_type])
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
@@ -187,12 +237,12 @@ class MyAzure2019Workload(Workload):
 
 			ips = df['CPU capacity provisioned [MHZ]'].to_numpy() * df2.to_numpy()[:, 0] / 100
 			if 'CPU' in failure_type:
-				IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max_duration]), int(1.2*sla), interval + sla)
+				IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max_duration]), sla, interval + sla)
 			else:
-				IPSModel = IPSMBitbrain(zeros, 0, int(1.2*sla), interval + sla)
+				IPSModel = IPSMBitbrain(zeros, 0, sla, interval + sla)
 
 			if 'RAM' in failure_type:
-				RAMModel = RMBitbrain((df['Memory usage [KB]']/2000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
+				RAMModel = RMBitbrain((df['Memory usage [KB]']/4000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
 			else:
 				RAMModel = RMBitbrain(zeros, zeros, zeros)
 				
@@ -207,6 +257,9 @@ class MyAzure2019Workload(Workload):
 	
 
 def test1():
+	# Test 1: Find the best combination of IPS and RAM models the dataset
+	# OBJECTIVE: maximize the number of csv files that can be used
+
 	dataset_path = 'simulator/workload/datasets/bitbrain/'
 	az_dpath = 'simulator/workload/datasets/azure_2019/'
 	
@@ -229,6 +282,7 @@ def test1():
 
 	# check for all ips and rams
 	mins_ram = np.array([400, 1200, 3400])
+
 	maxs_ram = np.array([1200, 3400, 6800])
 
 	mins_ips = np.array([400, 800, 1600])
@@ -293,3 +347,54 @@ def test1():
 	plt.ylabel("mul_cpu")
 	plt.yticks(np.linspace(0, num_values, 5), np.linspace(bounds[0][0], bounds[0][1], 5))
 	plt.savefig("matrix.png")
+
+
+def test2():
+	# TEST 2: test distribution of number of containers per node
+
+	from random import gauss
+	from numpy.random import poisson
+	import matplotlib.pyplot as plt
+
+
+	num_sim = 100000
+
+	# duration of container, follows a gaussian distribution
+	dur_mean = 5
+	dur_std = 3
+
+	# arrival of containers, follows a poisson distribution
+	arr_mean = 1.5
+
+	containers1 = [[max(1,round(gauss(dur_mean,dur_std))) for _ in range(max(1,poisson(arr_mean)))]]
+	containers2 = [[]]
+	containers3 = [[]]
+
+	for i in range(1,num_sim):
+		containers1.append([c-1 for c in containers1[i-1] if c!=1])
+		containers2.append([c-1 for c in containers2[i-1] if c!=1])
+		containers3.append([c-1 for c in containers3[i-1] if c!=1])
+		
+		containers1[i].extend([max(1,round(gauss(dur_mean,dur_std))) for _ in range(max(1,poisson(arr_mean)))])
+		containers2[i].extend([max(1,round(gauss(dur_mean,dur_std))) for _ in range(containers1[i-1].count(1))])
+		containers3[i].extend([max(1,round(gauss(dur_mean,dur_std))) for _ in range(containers2[i-1].count(1))])
+		
+
+	num_containers1 = [len(cs) for cs in containers1]
+	num_containers2 = [len(cs) for cs in containers2]
+	num_containers3 = [len(cs) for cs in containers3]
+
+	nc1 = {n:num_containers1.count(n) for n in set(num_containers1)}
+	print(nc1)
+	nc2 = {n:num_containers2.count(n) for n in set(num_containers2)}
+	print(nc2)
+	nc3 = {n:num_containers3.count(n) for n in set(num_containers3)}
+	print(nc3)
+
+	#plot nc
+	plt.figure()
+	plt.plot(list(nc1.keys()), list(nc1.values()), label="nc1")
+	plt.plot(list(nc2.keys()), list(nc2.values()), label="nc2")
+	plt.plot(list(nc3.keys()), list(nc3.values()), label="nc3")
+	plt.legend()
+	plt.savefig("nc.png")

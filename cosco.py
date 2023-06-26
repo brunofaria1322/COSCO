@@ -36,12 +36,12 @@ NUM_SIM_STEPS = 100
 #HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS =  3 * 2
 
-CONTAINERS = HOSTS * 5
-FAILURES = HOSTS * 5
+CONTAINERS = HOSTS * 20
+FAILURES = HOSTS * 20
 ROUTER_BW = 10000
 INTERVAL_TIME = 300 # seconds
 #NEW_CONTAINERS = 0 if HOSTS == 10 else 5
-NEW_CONTAINERS = 1
+NEW_CONTAINERS = 2
 
 FAULT_RATE = 0.3
 FAULT_TIME = 6
@@ -253,10 +253,9 @@ if __name__ == '__main__':
 		print(color.BOLD+"Simulation Interval:", step, color.ENDC)
 		stepSimulation(workload, scheduler, env, stats)
 		
-
 	saveStats(stats, datacenter, workload, env)
 
-def runCOSCO(prints = False, save_essential = True):	
+def runCOSCO(prints = False, save_essential = True):
 
 	datacenter, workload, scheduler, env, stats = initalizeEnvironment(prints)
 
