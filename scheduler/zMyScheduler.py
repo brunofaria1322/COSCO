@@ -1,70 +1,83 @@
 from .Scheduler import *
 import numpy as np
 
+
 class MyScheduler(Scheduler):
-	def __init__(self):
-		super().__init__()
-		self.result_cache = None
+    def __init__(self):
+        super().__init__()
+        self.result_cache = None
 
-	def selection(self):
-		selectedContainerIDs_targetHost = []
-		half_hosts_len = int(len(self.env.hostlist)/2)
-		# runs only the firs half of hosts (others are replicas)
-		for hostID, host in enumerate(self.env.hostlist[:half_hosts_len]):
+    def selection(self):
+        selectedContainerIDs_targetHost = []
+        half_hosts_len = int(len(self.env.hostlist) / 2)
+        # runs only the firs half of hosts (others are replicas)
+        for hostID, host in enumerate(self.env.hostlist[:half_hosts_len]):
+            # FAULT DETECTION
+            # CPU usage above 90%
+            if host.getCPU() > 90:
+                containerIDs = self.env.getContainersOfHost(hostID)
+                if containerIDs:
+                    # all the containers in host (Instructions per second)
+                    containerIPs = [
+                        self.env.containerlist[cid].getBaseIPS() for cid in containerIDs
+                    ]
+                    # selects the container that consumes more cpu resources (has more instructon per second (IPs))
+                    selectedContainerIDs_targetHost.append(
+                        (containerIDs[np.argmax(containerIPs)], hostID + half_hosts_len)
+                    )
 
-			# FAULT DETECTION
-			# CPU usage above 90%
-			if host.getCPU() > 90:
-				
-				containerIDs = self.env.getContainersOfHost(hostID)
-				if containerIDs:
-					# all the containers in host (Instructions per second)
-					containerIPs = [self.env.containerlist[cid].getBaseIPS() for cid in containerIDs]
-					# selects the container that consumes more cpu resources (has more instructon per second (IPs))
-					selectedContainerIDs_targetHost.append((containerIDs[np.argmax(containerIPs)], hostID + half_hosts_len))
-					
-					print(f'HOST {hostID} has cpu usage of {host.getCPU()}: {containerIPs}\t{host.ipsCap}\t{host.getBaseIPS()}')
-			
-			# RAM usage above 90%
-			elif host.getCurrentRAM()[0] > 0.9 * host.ramCap.size:
-				
-				containerIDs = self.env.getContainersOfHost(hostID)
-				if containerIDs:
-					# all the containers in host (Ram size)
-					containerRAMs = [self.env.containerlist[cid].getContainerSize() for cid in containerIDs]
-					# selects the container that consumes more ram resources (has more ram size)
-					selectedContainerIDs_targetHost.append((containerIDs[np.argmax(containerRAMs)], hostID + half_hosts_len))
+                    print(
+                        f"HOST {hostID} has cpu usage of {host.getCPU()}: {containerIPs}\t{host.ipsCap}\t{host.getBaseIPS()}"
+                    )
 
-					print(f'HOST {hostID} has ram usage of {host.getCurrentRAM()[0]}: {containerRAMs}\t{host.ramCap.size}\t{host.getCurrentRAM()[0]}')
+            # RAM usage above 90%
+            elif host.getCurrentRAM()[0] > 0.9 * host.ramCap.size:
+                containerIDs = self.env.getContainersOfHost(hostID)
+                if containerIDs:
+                    # all the containers in host (Ram size)
+                    containerRAMs = [
+                        self.env.containerlist[cid].getContainerSize()
+                        for cid in containerIDs
+                    ]
+                    # selects the container that consumes more ram resources (has more ram size)
+                    selectedContainerIDs_targetHost.append(
+                        (
+                            containerIDs[np.argmax(containerRAMs)],
+                            hostID + half_hosts_len,
+                        )
+                    )
 
-		return selectedContainerIDs_targetHost
+                    print(
+                        f"HOST {hostID} has ram usage of {host.getCurrentRAM()[0]}: {containerRAMs}\t{host.ramCap.size}\t{host.getCurrentRAM()[0]}"
+                    )
 
-	def placement(self, containerIDs):
-		#print('-------------place in')
-		decisions = []
-		# List with the cpu usafe of each host
-		#scores = [(hostID, host.getCPU()) for hostID, host in enumerate(self.env.hostlist)]
-		
-		for cid in containerIDs:
-			# run simple simulation will return energy consumption (we probably can use something that takes into account the CPU or "availability" instead)
-			#scores = [self.env.stats.runSimpleSimulation([(cid, hostID)]) for hostID, _ in enumerate(self.env.hostlist)]
+        return selectedContainerIDs_targetHost
 
-			
-			#print(cid, end='\t')
-			#print(scores)
+    def placement(self, containerIDs):
+        # print('-------------place in')
+        decisions = []
+        # List with the cpu usafe of each host
+        # scores = [(hostID, host.getCPU()) for hostID, host in enumerate(self.env.hostlist)]
 
-			#leastFullHost = min(scores, key = lambda t: t[1])
+        for cid in containerIDs:
+            # run simple simulation will return energy consumption (we probably can use something that takes into account the CPU or "availability" instead)
+            # scores = [self.env.stats.runSimpleSimulation([(cid, hostID)]) for hostID, _ in enumerate(self.env.hostlist)]
 
-			#decision.append((cid, leastFullHost[0]))
-			#scores.remove(leastFullHost)
+            # print(cid, end='\t')
+            # print(scores)
 
-			container_ltype = self.env.getContainerByID(cid).getLType()
-			#print(f"Container with ID {cid} has type {container_ltype}")
+            # leastFullHost = min(scores, key = lambda t: t[1])
 
-			# Will send to the layer type
-			decisions.append((cid, container_ltype))
+            # decision.append((cid, leastFullHost[0]))
+            # scores.remove(leastFullHost)
 
-		#print(decisions)
-		#print('-------------place out')
+            container_ltype = self.env.getContainerByID(cid).getLType()
+            # print(f"Container with ID {cid} has type {container_ltype}")
 
-		return decisions
+            # Will send to the layer type
+            decisions.append((cid, container_ltype))
+
+        # print(decisions)
+        # print('-------------place out')
+
+        return decisions
