@@ -282,7 +282,6 @@ def test1():
 
 	# check for all ips and rams
 	mins_ram = np.array([400, 1200, 3400])
-
 	maxs_ram = np.array([1200, 3400, 6800])
 
 	mins_ips = np.array([400, 800, 1600])
