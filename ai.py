@@ -15,6 +15,7 @@ from matplotlib.colors import ListedColormap
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, chi2, f_classif
 from sklearn.model_selection import train_test_split
+<<<<<<< HEAD
 from sklearn.metrics import (
     accuracy_score,
     confusion_matrix,
@@ -56,12 +57,36 @@ fault_type_str = "".join([str(i[0]).lower() for i in FAILURE_TYPES])
 DATAPATH = f"AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_TIME}rt_{FAULT_INCREASE_TIME}fit_hosts{hosts_str}_{type_str}_{fault_type_str}/"
 FIGURES_PATH = f"{DATAPATH}/figures/"
 CSV_PATH = f"logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_{HOSTS}_{CONTAINERS}_{ROUTER_BW}_{INTERVAL_TIME}_{NEW_CONTAINERS}/hostinfo_with_interval.csv"
+=======
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
+
+from sklearn.svm import SVC
+
+from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_RATE, FAULT_TIME, FAULT_INCREASE_TIME, RECOVER_TIME, FAULTY_HOSTS, FAILURE_TYPES, ACCUMULATIVE_FAULTS
+#from cosco import runCOSCO, NUM_SIM_STEPS, FAULT_INCREASE_TIME, FAULTY_HOSTS, ACCUMULATIVE_FAULTS
+
+#FAULT_RATE = 0.3
+#FAULT_TIME = 6
+#RECOVER_TIME = 18
+
+
+hosts_str = ''.join([str(i) for i in FAULTY_HOSTS])
+type_str = 'acc' if ACCUMULATIVE_FAULTS else 'rec'
+fault_type_str = ''.join([str(i[0]).lower() for i in FAILURE_TYPES])
+
+DATAPATH = f'AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_TIME}rt_{FAULT_INCREASE_TIME}fit_hosts{hosts_str}_{type_str}_{fault_type_str}/'
+FIGURES_PATH = f'{DATAPATH}/figures/'
+CSV_PATH = f'logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_6_30_10000_300_1/hostinfo_with_interval.csv'
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 NUMBER_OF_SIMULATIONS = 30
 
 NUMBER_OF_REPETITIONS = 50
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 def generate_datasets():
     """
     Generates datasets for the AI by calling the COSCO simulator
@@ -71,12 +96,21 @@ def generate_datasets():
     # create datapath folder if it doesn't exist
 
     os.makedirs(os.path.dirname(DATAPATH), exist_ok=True)
+<<<<<<< HEAD
     os.makedirs(os.path.dirname(DATAPATH + "data/"), exist_ok=True)
     os.makedirs(os.path.dirname(FIGURES_PATH), exist_ok=True)
     os.makedirs(os.path.dirname(FIGURES_PATH + "analysis/"), exist_ok=True)
     os.makedirs(os.path.dirname(FIGURES_PATH + "metrics/"), exist_ok=True)
 
     # old version (without multiprocessing)
+=======
+    os.makedirs(os.path.dirname(DATAPATH+'data/'), exist_ok=True)
+    os.makedirs(os.path.dirname(FIGURES_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(FIGURES_PATH+'analysis/'), exist_ok=True)
+    os.makedirs(os.path.dirname(FIGURES_PATH+'metrics/'), exist_ok=True)
+
+    #old version (without multiprocessing)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         # skip if log file already exists
@@ -85,11 +119,19 @@ def generate_datasets():
 
         print(f"Creating DATA {i+1} of {NUMBER_OF_SIMULATIONS}")
         # run simulation
+<<<<<<< HEAD
         runCOSCO(prints=False)
+=======
+        runCOSCO(prints = False)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
         # copy log file to datapath
         os.system(f"cp {CSV_PATH} {datapath_i}")
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     """
     # create pool of processes
     with Pool(processes=NUMBER_OF_SIMULATIONS) as p:
@@ -107,6 +149,10 @@ def generate_datasets():
                 call_cosco(i)
     """
 
+<<<<<<< HEAD
+=======
+                
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 def call_cosco(i):
     datapath_i = f"{DATAPATH}data/data{i}.csv"
@@ -116,15 +162,24 @@ def call_cosco(i):
 
     print(f"Creating DATA {i+1} of {NUMBER_OF_SIMULATIONS}")
     # run simulation
+<<<<<<< HEAD
     runCOSCO(prints=False)
+=======
+    runCOSCO(prints = False)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # copy log file to datapath
     # check if file exists
     if os.path.isfile(CSV_PATH):
         os.system(f"cp {CSV_PATH} {datapath_i}")
 
+<<<<<<< HEAD
 
 def evaluate_datasets(failure="cpu"):
+=======
+def evaluate_datasets(failure = 'cpu'):
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     # EVALUATING DATA
     metrics_1 = [[], [], [], []]  # accuracy, precision, recall, f1
     metrics_all = [[], [], [], []]  # accuracy, precision, recall, f1
@@ -134,19 +189,29 @@ def evaluate_datasets(failure="cpu"):
     best_pred = None
     best_cpu = None
 
+<<<<<<< HEAD
     metrics_path = FIGURES_PATH + "metrics/"
+=======
+    metrics_path = FIGURES_PATH+'metrics/'
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     for i in range(NUMBER_OF_SIMULATIONS):
         print(f"Evaluating DATA {i+1} of {NUMBER_OF_SIMULATIONS}")
 
         datapath_i = f"{DATAPATH}data/data{i}.csv"
 
+<<<<<<< HEAD
+=======
+    
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         # read data
         data = pd.read_csv(datapath_i)
 
         # data has lists on each column. in this case, we want only the first element of each list
         # remove some columns that are not needed for now
 
+<<<<<<< HEAD
         headers = [
             "interval",
             "cpu",
@@ -158,6 +223,11 @@ def evaluate_datasets(failure="cpu"):
         ]
 
         data = data[headers + "cpufailures"]
+=======
+        headers = ['interval', 'cpu', 'numcontainers', 'baseips', 'ipsavailable', 'ipscap', 'apparentips']
+
+        data = data[headers + 'cpufailures']
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
         # create copies of data
         host1 = data.copy()
@@ -170,6 +240,7 @@ def evaluate_datasets(failure="cpu"):
             host3[header] = host3[header].apply(lambda x: json.loads(x)[2])
 
         # count failures
+<<<<<<< HEAD
         # print("Class distribution:")
         # print("Host1:\n", host1['cpufailures'].value_counts())
         # print("Host2:\n", host2['cpufailures'].value_counts())
@@ -192,32 +263,65 @@ def evaluate_datasets(failure="cpu"):
             RandomForestClassifier(n_estimators=100, n_jobs=-1),
             binary=True,
         )
+=======
+        #print("Class distribution:")
+        #print("Host1:\n", host1['cpufailures'].value_counts())
+        #print("Host2:\n", host2['cpufailures'].value_counts())
+        #print("Host3:\n", host3['cpufailures'].value_counts())
+
+        # WORK WITH BINARY CLASSIFICATION
+        host1['cpufailures'] = host1['cpufailures'].apply(lambda x: 1 if x > 0 else 0)
+        host2['cpufailures'] = host2['cpufailures'].apply(lambda x: 1 if x > 0 else 0)
+        host3['cpufailures'] = host3['cpufailures'].apply(lambda x: 1 if x > 0 else 0)
+
+        #print("Class distribution after binary classification:")
+        #print("Host1:\n", host1['cpufailures'].value_counts())
+        #print("Host2:\n", host2['cpufailures'].value_counts())
+        #print("Host3:\n", host3['cpufailures'].value_counts())
+
+
+        # TRAIN AND EVALUATE ONLY ON HOST1
+        metrics_temp, _ = train_and_evaluate(host1, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         metrics_1[0].extend(metrics_temp[0])
         metrics_1[1].extend(metrics_temp[1])
         metrics_1[2].extend(metrics_temp[2])
         metrics_1[3].extend(metrics_temp[3])
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         # TRAIN AND EVALUATE ON ALL HOSTS TOGETHER
 
         # concatenate data
         all_hosts = pd.concat([host1, host2, host3])
 
+<<<<<<< HEAD
         metrics_temp, _ = train_and_evaluate(
             all_hosts,
             "cpufailures",
             RandomForestClassifier(n_estimators=100, n_jobs=-1),
             binary=True,
         )
+=======
+        metrics_temp, _ = train_and_evaluate(all_hosts, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         metrics_all[0].extend(metrics_temp[0])
         metrics_all[1].extend(metrics_temp[1])
         metrics_all[2].extend(metrics_temp[2])
         metrics_all[3].extend(metrics_temp[3])
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         # TRAIN ON HOSTS 1 AND 2, EVALUATE ON HOST 3
 
         # concatenate data
         host1_2 = pd.concat([host1, host2])
 
+<<<<<<< HEAD
         metrics_temp, best_info = train_and_evaluate(
             host1_2,
             "cpufailures",
@@ -225,21 +329,34 @@ def evaluate_datasets(failure="cpu"):
             data_test=host3,
             binary=True,
         )
+=======
+        metrics_temp, best_info = train_and_evaluate(host1_2, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), data_test=host3, binary=True)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         metrics_12_3[0].extend(metrics_temp[0])
         metrics_12_3[1].extend(metrics_temp[1])
         metrics_12_3[2].extend(metrics_temp[2])
         metrics_12_3[3].extend(metrics_temp[3])
 
+<<<<<<< HEAD
         if best_info[1] > best_f1:
             best_f1 = best_info[1]
             best_pred = best_info[0]
             best_cpu = host3["cpu"].values
+=======
+    
+        if best_info[1] > best_f1:
+            best_f1 = best_info[1]
+            best_pred = best_info[0]
+            best_cpu = host3['cpu'].values
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # plot histograms for f1 scores
     plt.figure()
     plt.hist(metrics_1[3], bins=10, alpha=0.5)
     plt.hist(metrics_all[3], bins=10, alpha=0.5)
     plt.hist(metrics_12_3[3], bins=10, alpha=0.5)
+<<<<<<< HEAD
     plt.legend(["Host1", "All hosts", "Host1 and Host2"])
     plt.savefig(f"{metrics_path}/f1_scores.png")
 
@@ -251,6 +368,20 @@ def evaluate_datasets(failure="cpu"):
 
     # plots for train on host1 and host2, test on host3
     plot_metrics(metrics_12_3, "metrics_12_3")
+=======
+    plt.legend(['Host1', 'All hosts', 'Host1 and Host2'])
+    plt.savefig(f'{metrics_path}/f1_scores.png')
+
+
+    # plots for host1
+    plot_metrics(metrics_1, 'metrics_1')
+
+    # plots for all hosts
+    plot_metrics(metrics_all, 'metrics_all')
+
+    # plots for train on host1 and host2, test on host3
+    plot_metrics(metrics_12_3, 'metrics_12_3')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # plot cpu usage with the color of the confusion label
     classes = []
@@ -270,6 +401,7 @@ def evaluate_datasets(failure="cpu"):
                 # False Negative
                 classes.append(2)
 
+<<<<<<< HEAD
     colors = ListedColormap(["blue", "green", "yellow", "orange"])
 
     plt.figure(figsize=(15, 5))
@@ -283,29 +415,55 @@ def evaluate_datasets(failure="cpu"):
     )
 
     plt.savefig(f"{metrics_path}/cpu_12_3.png")
+=======
+    colors = ListedColormap(['blue', 'green', 'yellow', 'orange'])
+
+    plt.figure(figsize=(15, 5))
+    scatter = plt.scatter(range(len(best_pred)), best_cpu, c=classes, cmap=colors)
+    plt.xlabel('Time')
+    plt.ylabel('CPU usage')
+    plt.legend(handles=scatter.legend_elements()[0], loc="upper left", labels=['True Negative', 'True Positive', 'False Negative', 'False Positive'])
+    
+    plt.savefig(f'{metrics_path}/cpu_12_3.png')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 
 def train_and_evaluate_big_data():
     data_temp = pd.read_csv(f"{DATAPATH}data/data0.csv")
 
+<<<<<<< HEAD
     num_hosts = int(len(json.loads(data_temp["cpu"][0])) / 2)
 
+=======
+    num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
+    
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     # create big data dataframe
     big_data = [pd.DataFrame() for _ in range(num_hosts)]
 
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
+<<<<<<< HEAD
         # print(f'Number of hosts: {num_hosts}')
 
         data_temp = data_temp.drop(
             columns=["interval", "ram", "ramavailable", "disk", "diskavailable"]
         )
+=======
+        #print(f'Number of hosts: {num_hosts}')
+
+        data_temp = data_temp.drop(columns=['interval','ram', 'ramavailable', 'disk', 'diskavailable'])
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         # get headers
         headers = data_temp.columns
 
         # create list of copies of data
+<<<<<<< HEAD
         data = [data_temp.copy() for _ in range(num_hosts)]
+=======
+        data = [data_temp.copy() for _ in range(num_hosts)] 
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
         for j in range(num_hosts):
             for header in headers:
@@ -332,6 +490,7 @@ def train_and_evaluate_big_data():
 
         # evaluate
         metrics[0].append(accuracy_score(test.iloc[:, -1], pred))
+<<<<<<< HEAD
         metrics[1].append(precision_score(test.iloc[:, -1], pred, average="macro"))
         metrics[2].append(recall_score(test.iloc[:, -1], pred, average="macro"))
         metrics[3].append(
@@ -341,12 +500,22 @@ def train_and_evaluate_big_data():
             * (metrics[1][-1] * metrics[2][-1])
             / (metrics[1][-1] + metrics[2][-1])
         )
+=======
+        metrics[1].append(precision_score(test.iloc[:, -1], pred, average='macro'))
+        metrics[2].append(recall_score(test.iloc[:, -1], pred, average='macro'))
+        metrics[3].append(0 if metrics[1][-1] * metrics[2][-1] == 0 else 2 * (metrics[1][-1] * metrics[2][-1]) / (metrics[1][-1] + metrics[2][-1]))
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # plot metrics
     plt.figure()
     plt.boxplot(metrics)
+<<<<<<< HEAD
     plt.xticks([1, 2, 3, 4], ["Accuracy", "Precision", "Recall", "F1"])
     plt.savefig(f"{FIGURES_PATH}/metrics_big_data.png")
+=======
+    plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
+    plt.savefig(f'{FIGURES_PATH}/metrics_big_data.png')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # train in all data
     merged_big_data = pd.DataFrame()
@@ -369,6 +538,7 @@ def train_and_evaluate_big_data():
     # evaluate
     metrics = []
     metrics.append(accuracy_score(test.iloc[:, -1], pred))
+<<<<<<< HEAD
     metrics.append(precision_score(test.iloc[:, -1], pred, average="macro"))
     metrics.append(recall_score(test.iloc[:, -1], pred, average="macro"))
     metrics.append(
@@ -384,24 +554,49 @@ def failure_distribution():
     analysis_path = FIGURES_PATH + "analysis/"
 
     os.makedirs(os.path.dirname(analysis_path + "failuresdist/"), exist_ok=True)
+=======
+    metrics.append(precision_score(test.iloc[:, -1], pred, average='macro'))
+    metrics.append(recall_score(test.iloc[:, -1], pred, average='macro'))
+    metrics.append(0 if metrics[1] * metrics[2] == 0 else 2 * (metrics[1] * metrics[2]) / (metrics[1] + metrics[2]))
+
+    print(metrics)
+
+def failure_distribution():
+    analysis_path = FIGURES_PATH+'analysis/'
+
+    os.makedirs(os.path.dirname(analysis_path+'failuresdist/'), exist_ok=True)
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
 
+<<<<<<< HEAD
         num_hosts = int(len(json.loads(data_temp["cpu"][0])) / 2)
         # print(f'Number of hosts: {num_hosts}')
 
         data_temp = data_temp.drop(columns=["interval", "disk", "diskavailable"])
+=======
+        num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
+        #print(f'Number of hosts: {num_hosts}')
+
+        data_temp = data_temp.drop(columns=['interval', 'disk', 'diskavailable'])
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         # get headers
         headers = data_temp.columns
 
         # create list of copies of data
+<<<<<<< HEAD
         data = [data_temp.copy() for _ in range(num_hosts)]
+=======
+        data = [data_temp.copy() for _ in range(num_hosts)] 
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
         for j in range(num_hosts):
             for header in headers:
                 data[j][header] = data[j][header].apply(lambda x: json.loads(x)[j])
+<<<<<<< HEAD
 
         # count number of cpu failures
         counts_cpu = [list(host["cpufailures"].value_counts()) for host in data]
@@ -416,6 +611,18 @@ def failure_distribution():
             ]
         )
         # print(f'Number of labels: {num_max_labels}')
+=======
+            
+
+        # count number of cpu failures
+        counts_cpu = [list(host['cpufailures'].value_counts()) for host in data]
+        
+        # count number of ram failures
+        counts_ram = [list(host['ramfailures'].value_counts()) for host in data]
+
+        num_max_labels = max([max([len(count)] for count in counts_cpu)[0], max([len(count) for count in counts_ram])])
+        #print(f'Number of labels: {num_max_labels}')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
         for count in counts_cpu:
             while len(count) < num_max_labels:
@@ -425,9 +632,16 @@ def failure_distribution():
             while len(count) < num_max_labels:
                 count.append(0)
 
+<<<<<<< HEAD
         plt.figure()
         fig, ax = plt.subplots(figsize=(10, 5), tight_layout=True)
 
+=======
+
+        plt.figure()
+        fig, ax = plt.subplots(figsize=(10, 5), tight_layout=True)
+        
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         x = np.arange(num_max_labels)
         x_labels = [str(label) for label in range(num_max_labels)]
 
@@ -439,12 +653,18 @@ def failure_distribution():
             multiplier += 1
 
             # cpu failures
+<<<<<<< HEAD
             rects = ax.bar(x + offset, counts_cpu[h_i], width, label=f"Host {h_i}")
 
+=======
+            rects = ax.bar(x + offset, counts_cpu[h_i], width, label=f'Host {h_i}')
+            
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
             for rect in rects:
                 height = rect.get_height()
 
                 if height > 0:
+<<<<<<< HEAD
                     ax.annotate(
                         f"{height}",
                         xy=(rect.get_x() + rect.get_width() / 2, height),
@@ -453,18 +673,26 @@ def failure_distribution():
                         ha="center",
                         va="bottom",
                     )
+=======
+                    ax.annotate(f'{height}', xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
             offset = width * (multiplier + num_hosts - 1)
 
             # ram failures
+<<<<<<< HEAD
             rects = ax.bar(
                 x + offset, counts_ram[h_i], width, label=f"Host {h_i}", hatch="//"
             )
+=======
+            rects = ax.bar(x + offset, counts_ram[h_i], width, label=f'Host {h_i}', hatch='//')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
             for rect in rects:
                 height = rect.get_height()
 
                 if height > 0:
+<<<<<<< HEAD
                     ax.annotate(
                         f"{height}",
                         xy=(rect.get_x() + rect.get_width() / 2, height),
@@ -482,18 +710,37 @@ def failure_distribution():
         ax.legend(loc="upper right")
         plt.savefig(f"{analysis_path}failuresdist/data{i}.png")
 
+=======
+                    ax.annotate(f'{height}', xy=(rect.get_x() + rect.get_width() / 2, height), xytext=(0, 3), textcoords="offset points", ha='center', va='bottom')
+
+
+        ax.set_xlabel('Failure Intensity')
+        ax.set_ylabel('Number of Occurrences')
+        
+        ax.set_xticks(x + (num_hosts * 2 - 1) / 2  * width)
+        ax.set_xticklabels(x_labels)
+        ax.legend(loc='upper right')
+        plt.savefig(f'{analysis_path}failuresdist/data{i}.png')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 def big_merged_data_eda():
     # Exploratory Data Analysis on the merged data
 
+<<<<<<< HEAD
     big_analysis_path = FIGURES_PATH + "analysis/big_merged_data_eda/"
     os.makedirs(os.path.dirname(big_analysis_path), exist_ok=True)
     os.makedirs(os.path.dirname(big_analysis_path + "pairs/"), exist_ok=True)
+=======
+    big_analysis_path = FIGURES_PATH+'analysis/big_merged_data_eda/'
+    os.makedirs(os.path.dirname(big_analysis_path), exist_ok=True)
+    os.makedirs(os.path.dirname(big_analysis_path+'pairs/'), exist_ok=True)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # load and merge data
     merged_big_data_cpu = pd.DataFrame()
     merged_big_data_ram = pd.DataFrame()
 
+<<<<<<< HEAD
     cpu_headers = [
         "cpu",
         "numcontainers",
@@ -514,13 +761,22 @@ def big_merged_data_eda():
         "ramavailable_w",
         "ramfailures",
     ]
+=======
+    cpu_headers = ['cpu', 'numcontainers', 'baseips', 'ipsavailable', 'ipscap', 'apparentips', 'cpufailures']
+    ram_headers = ['ram', 'numcontainers', 'ram_s', 'ram_r', 'ram_w', 'ramavailable_s', 'ramavailable_r', 'ramavailable_w', 'ramfailures']
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
 
+<<<<<<< HEAD
         num_hosts = int(len(json.loads(data_temp["cpu"][0])) / 2)
         # print(f'Number of hosts: {num_hosts}')
+=======
+        num_hosts = int(len(json.loads(data_temp['cpu'][0]))/2)
+        #print(f'Number of hosts: {num_hosts}')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
         data_temp_cpu = data_temp[cpu_headers]
         data_temp_ram = data_temp[ram_headers]
@@ -531,6 +787,7 @@ def big_merged_data_eda():
 
         for j in range(num_hosts):
             for header in cpu_headers:
+<<<<<<< HEAD
                 data_cpu[j][header] = data_cpu[j][header].apply(
                     lambda x: json.loads(x)[j]
                 )
@@ -543,19 +800,38 @@ def big_merged_data_eda():
         for j in range(num_hosts):
             # data_cpu[j]['host_ltype'] = j
             # data_ram[j]['host_ltype'] = j
+=======
+                data_cpu[j][header] = data_cpu[j][header].apply(lambda x: json.loads(x)[j])
+            
+            for header in ram_headers:
+                data_ram[j][header] = data_ram[j][header].apply(lambda x: json.loads(x)[j])
+
+        for j in range(num_hosts):
+            #data_cpu[j]['host_ltype'] = j
+            #data_ram[j]['host_ltype'] = j
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
             merged_big_data_cpu = merged_big_data_cpu.append(data_cpu[j])
             merged_big_data_ram = merged_big_data_ram.append(data_ram[j])
 
     merged_big_data_cpu = merged_big_data_cpu.reset_index(drop=True)
     merged_big_data_ram = merged_big_data_ram.reset_index(drop=True)
+<<<<<<< HEAD
 
     print(merged_big_data_cpu.shape, merged_big_data_ram.shape)
 
+=======
+    
+    print(merged_big_data_cpu.shape, merged_big_data_ram.shape)
+
+
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     # following https://www.digitalocean.com/community/tutorials/exploratory-data-analysis-python
 
     # 1. Basic Information
 
+<<<<<<< HEAD
     print("\n---- INFO ----")
     print("CPU:\n", merged_big_data_cpu.info())
     print("\nRAM:\n", merged_big_data_ram.info())
@@ -576,25 +852,54 @@ def big_merged_data_eda():
     )
 
     # """
+=======
+    print('\n---- INFO ----')
+    print('CPU:\n',merged_big_data_cpu.info())
+    print('\nRAM:\n',merged_big_data_ram.info())
+
+    print('\n---- DESCRIPTION ----')
+    print('CPU:\n',merged_big_data_cpu.describe())
+    print('\nRAM:\n',merged_big_data_ram.describe())
+
+    # 2. Duplicate Values
+
+    print(f'\n---- DUPLICATES:\tCPU: {merged_big_data_cpu.duplicated().sum()}\tRAM: {merged_big_data_ram.duplicated().sum()}')
+
+    # 5. Missing Values
+    print(f'\n---- MISSING VALUES ----\nCPU:\n{merged_big_data_cpu.isnull().sum()}\nRAM:\n{merged_big_data_ram.isnull().sum()}')
+
+    #"""
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # 10. Correlation Matrix
     plt.figure()
     fig, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
     corr = merged_big_data_cpu.corr()
+<<<<<<< HEAD
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.png")
+=======
+    sns.heatmap(corr, annot=True, fmt='.3f', ax=ax)
+    plt.savefig(f'{big_analysis_path}correlation_matrix_cpu.png')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     plt.figure()
     fig, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
     corr = merged_big_data_ram.corr()
+<<<<<<< HEAD
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_ram.png")
+=======
+    sns.heatmap(corr, annot=True, fmt='.3f', ax=ax)
+    plt.savefig(f'{big_analysis_path}correlation_matrix_ram.png')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # Correlation Matrix shows that there is no strong correlation between cpufailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
     # Whith this information, we will try to predict cpufailures using all the features and compare it to the results of using only the features that have a correlation with cpufailures
     #   wich are [cpu, apparentips]
 
     # Train and Evaluate with all features - CPU
+<<<<<<< HEAD
     metrics, _ = train_and_evaluate(
         merged_big_data_cpu,
         "cpufailures",
@@ -611,10 +916,18 @@ def big_merged_data_eda():
 
     print(
         f"""\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
+=======
+    metrics, _ = train_and_evaluate(merged_big_data_cpu, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data_cpu, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+
+    print(f'''\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
         mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
         median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+<<<<<<< HEAD
         """
     )
 
@@ -635,13 +948,28 @@ def big_merged_data_eda():
 
     print(
         f"""\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
+=======
+        ''')
+    
+    # Train and Evaluate with all features - RAM
+    metrics, _ = train_and_evaluate(merged_big_data_ram, 'ramfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+    # binary classification
+    metrics_bin, _ = train_and_evaluate(merged_big_data_ram, 'ramfailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
+
+    print(f'''\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
         mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
         median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
+<<<<<<< HEAD
         """
     )
 
+=======
+        ''')
+    
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     exit()
 
     """
@@ -777,6 +1105,7 @@ def big_merged_data_eda():
     # It was tested but the results were a lot worse
 
     # plot metrics
+<<<<<<< HEAD
     # plot_metrics(metrics, 'big_merged_data_all_features')
 
     # Train and Evaluate with only the features that have a correlation with cpufailures
@@ -786,6 +1115,17 @@ def big_merged_data_eda():
     # plot_metrics(metrics, 'big_merged_data_correlated_features')
 
     # """
+=======
+    #plot_metrics(metrics, 'big_merged_data_all_features')
+
+    # Train and Evaluate with only the features that have a correlation with cpufailures
+    #metrics, _ = train_and_evaluate(merged_big_data[['cpu','apparentips', 'cpufailures']], 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
+
+    # plot metrics
+    #plot_metrics(metrics, 'big_merged_data_correlated_features')
+
+    #"""
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     # Remove ltype and ips cap?
     # normalize data?
@@ -818,10 +1158,15 @@ def big_merged_data_eda():
 
     """
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     # select k best features
     # https://www.simplilearn.com/tutorials/machine-learning-tutorial/feature-selection-in-machine-learning
     # the aforementioned tutorial mentions that, for numerical input and categorical output, we should use ANOVA Correlation Coefficient (linear) or Kendall's rank coefficient (non-linear)
 
+<<<<<<< HEAD
     print("\n---- SELECT K BEST FEATURES - RAM ----")
 
     print("\n\t-- ANOVA --")
@@ -899,6 +1244,65 @@ def big_merged_data_eda():
     featureScores.columns = ["Specs", "Score"]
 
     print(featureScores.sort_values(by="Score", ascending=False))
+=======
+    print('\n---- SELECT K BEST FEATURES - RAM ----')
+
+    print('\n\t-- ANOVA --')
+
+    best_features = SelectKBest(score_func=f_classif, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+
+    print('\n\t-- CHI2 --')
+
+    best_features = SelectKBest(score_func=chi2, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+
+
+    # feature importance
+    print('\n---- FEATURE IMPORTANCE ----')
+
+    model = ExtraTreesClassifier()
+    model.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    print(model.feature_importances_)
+
+    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+    print(feat_importances.sort_values(ascending=False))
+
+    print('\n---- SELECT K BEST FEATURES - CPU ----')
+
+    print('\n\t-- ANOVA --')
+
+    best_features = SelectKBest(score_func=f_classif, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     """
     print('\n\t-- KENDALL --')
@@ -916,6 +1320,7 @@ def big_merged_data_eda():
     print(featureScores.sort_values(by='Score', ascending=False))
     """
 
+<<<<<<< HEAD
     print("\n\t-- CHI2 --")
 
     best_features = SelectKBest(score_func=chi2, k="all")
@@ -960,10 +1365,47 @@ def test():
     datapath = (
         "logs/MyFog_MyAzure2019Workload_100_6_30_10000_300_1/hostinfo_with_interval.csv"
     )
+=======
+
+    print('\n\t-- CHI2 --')
+
+    best_features = SelectKBest(score_func=chi2, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+
+
+    # feature importance
+    print('\n---- FEATURE IMPORTANCE ----')
+
+    model = ExtraTreesClassifier()
+    model.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    print(model.feature_importances_)
+
+    feat_importances = pd.Series(model.feature_importances_, index=merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+    print(feat_importances.sort_values(ascending=False))
+
+
+
+def test():
+    #plot ram from datasets
+
+    # read data 1
+    datapath = "logs/MyFog_MyAzure2019Workload_100_6_30_10000_300_1/hostinfo_with_interval.csv"
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     data = pd.read_csv(datapath)
 
     num_hosts = 3
 
+<<<<<<< HEAD
     headers = [
         "ram_s",
         "ram_r",
@@ -974,6 +1416,11 @@ def test():
     ]
 
     data = data[["interval"] + headers]
+=======
+    headers = ['ram_s','ram_r','ram_w','ramavailable_s','ramavailable_r','ramavailable_w']
+
+    data = data[['interval'] + headers]
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     hosts = [data.copy() for _ in range(num_hosts)]
 
@@ -984,6 +1431,7 @@ def test():
         print(hosts[i].head())
         print(hosts[i].describe())
 
+<<<<<<< HEAD
     # plot with 'interval' as x axis
 
     # polot horizontal line in each plot
@@ -1000,6 +1448,26 @@ def test():
 
 
 def train_and_evaluate(data, y_col, model, data_test=None, binary=False):
+=======
+    
+    # plot with 'interval' as x axis
+    
+    # polot horizontal line in each plot
+    list_ram = [[4295, 17180, 34360], [372., 360., 376.54], [200., 305., 266.75]]
+
+    _, ax = plt.subplots(3, 3, figsize=(15, 10))
+    for i, host in enumerate(hosts):
+        for r in ['ram', 'ramavailable']:
+            for j, hh in enumerate(['s', 'r', 'w']):
+                ax[i][j].axhline(y=list_ram[j][i], color='r', linestyle='-')
+                sns.lineplot(x='interval', y=f'{r}_{hh}', data=host, ax=ax[i][j])
+                
+
+    plt.savefig('ram.png')
+
+            
+def train_and_evaluate(data, y_col, model, data_test = None, binary=False):
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
     """
     Train and evaluate a model using the given data and model
     It will run NUMBER_OF_REPETITIONS times
@@ -1051,6 +1519,7 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False):
 
         # evaluate
         metrics[0].append(accuracy_score(y_test, y_pred))
+<<<<<<< HEAD
         metrics[1].append(
             precision_score(y_test, y_pred, average="binary" if binary else "macro")
         )
@@ -1064,6 +1533,15 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False):
         # Why macro? https://towardsdatascience.com/micro-macro-weighted-averages-of-f1-score-clearly-explained-b603420b292f
         # Because the classes are imbalanced, so we want to give the same importance to each class. average='weighted' would give more importance to the majority class
 
+=======
+        metrics[1].append(precision_score(y_test, y_pred, average='binary' if binary else 'macro'))
+        metrics[2].append(recall_score(y_test, y_pred, average='binary' if binary else 'macro'))
+        metrics[3].append(f1_score(y_test, y_pred, average='binary' if binary else 'macro'))
+
+        # Why macro? https://towardsdatascience.com/micro-macro-weighted-averages-of-f1-score-clearly-explained-b603420b292f
+        # Because the classes are imbalanced, so we want to give the same importance to each class. average='weighted' would give more importance to the majority class
+        
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
         # copilot sugested the following link: https://datascience.stackexchange.com/questions/15989/micro-average-vs-macro-average-performance-in-a-multiclass-classification-settin
 
         if metrics[3][-1] > best_f1:
@@ -1072,7 +1550,10 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False):
 
     return metrics, (y_pred_best, best_f1)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 def plot_metrics(metrics, name):
     """
     Plot the metrics
@@ -1084,11 +1565,19 @@ def plot_metrics(metrics, name):
     name : str
         Name of the file to save the plot
     """
+<<<<<<< HEAD
 
     plt.figure()
     plt.boxplot(metrics)
     plt.xticks([1, 2, 3, 4], ["Accuracy", "Precision", "Recall", "F1"])
     plt.savefig(f"{FIGURES_PATH}metrics/{name}.png")
+=======
+    
+    plt.figure()
+    plt.boxplot(metrics)
+    plt.xticks([1, 2, 3, 4], ['Accuracy', 'Precision', 'Recall', 'F1'])
+    plt.savefig(f'{FIGURES_PATH}metrics/{name}.png')
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 
 def multiprocessing_test():
@@ -1108,6 +1597,7 @@ def multiprocessing_test():
     with Pool(processes=NUMBER_OF_SIMULATIONS) as pool:
         pool.map(multiprocessing_test_aux, range(NUMBER_OF_SIMULATIONS))
 
+<<<<<<< HEAD
 
 def multiprocessing_test_aux(i):
     print(f"starting -> {i}")
@@ -1136,3 +1626,34 @@ if __name__ == "__main__":
     # multiprocessing_test()
 
     print(f"Time taken: {time.time() - time_start}")
+=======
+def multiprocessing_test_aux(i):
+    print(f'starting -> {i}')
+    # do some hard work
+    a = 0
+    for j in range(NUM_SIM_STEPS*10):
+        # do some calculations
+        for _ in range(j, NUM_SIM_STEPS*10):
+            a += 1
+    print(f'finished -> {i}, result: {a}')
+    
+
+if __name__ == '__main__':
+    time_start = time.time()
+    
+    #generate_datasets()
+
+    failure_distribution()
+
+    #train_and_evaluate_big_data()
+
+    big_merged_data_eda()
+
+    #test()
+
+    #multiprocessing_test()
+
+    print(f'Time taken: {time.time() - time_start}')
+
+
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
