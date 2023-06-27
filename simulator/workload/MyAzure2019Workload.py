@@ -23,8 +23,12 @@ import concurrent.futures
 
 # Intel Pentium III gives 2054 MIPS at 600 MHz
 # Source: https://archive.vn/20130205075133/http://www.tomshardware.com/charts/cpu-charts-2004/Sandra-CPU-Dhrystone,449.html
+<<<<<<< HEAD
 #ips_multiplier = 2054.0 / (2 * 600)
 ips_multiplier = 1
+=======
+ips_multiplier = 2054.0 / (2 * 600)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 # Found:  0.36363636363636365 40.4040404040404 73 [30, 28, 15]
 #ips_multiplier = 1 / 0.20711071107110712
@@ -57,9 +61,12 @@ class MyAzure2019Workload(Workload):
 		#print(f"Time taken: {time() - start_time}")
 		#exit()
 
+<<<<<<< HEAD
 		#test2()
 		#exit()
 
+=======
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 		## FAILURES
 		self.creationFailure_id = 0
 		self.createdFailures = []
@@ -92,8 +99,14 @@ class MyAzure2019Workload(Workload):
 		self.az_dpath = az_dpath
 		self.disk_sizes = [1, 2, 3]
 		self.meanSLA, self.sigmaSLA = 20, 3
+<<<<<<< HEAD
 		self.meanSLA, self.sigmaSLA = 4, 1
 		self.max_sla = round(self.meanSLA + 4 * self.sigmaSLA) # it cathes 99.9% of the data
+=======
+		self.meanSLA, self.sigmaSLA = 3, 0.5
+		self.meanSLA, self.sigmaSLA = 5, 5
+		self.max_sla = math.ceil(self.meanSLA + 3 *  self.sigmaSLA)
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 
 		self.possible_indices = [[],[],[]]	# 3 types
@@ -102,11 +115,14 @@ class MyAzure2019Workload(Workload):
 			self.possible_indices = np.load(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy",allow_pickle=True)
 
 		else:
+<<<<<<< HEAD
 			cpus_ips = [4029, 8102, 16111]	# from MyFog
 			rams = [4295, 17180, 34360]		# from MyFog
 			max_containers = [20, 30, 50]	# manually
 
 			all_ips = []
+=======
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 			for i in range(1, 500):
 				df = pd.read_csv(self.dataset_path+'rnd/'+str(i)+'.csv', sep=';\t')
 				df2 = pd.read_csv(az_dpath+str(i)+'.csv', header=None)
@@ -114,6 +130,7 @@ class MyAzure2019Workload(Workload):
 				ips = df['CPU capacity provisioned [MHZ]'].to_numpy()[:self.max_sla] * df2.to_numpy()[:self.max_sla, 0] / 100
 				ram = df['Memory usage [KB]'].to_numpy()[:self.max_sla]
 
+<<<<<<< HEAD
 				temp_ips = ips_multiplier * np.max(ips) * 0.9
 				all_ips.append(temp_ips)
 				temp_ram = np.max(ram) / 4000
@@ -169,6 +186,26 @@ class MyAzure2019Workload(Workload):
 		print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))
 
 		#exit()
+=======
+				temp_ips = ips_multiplier * np.max(ips)
+				temp_ram = np.max(ram) / 2000
+				
+				if 100 < temp_ips < 800:
+					if temp_ips < 200:
+						if temp_ram < 400:
+							self.possible_indices[0].append(i)
+					elif temp_ips < 400:
+						if temp_ram < 1700:
+							self.possible_indices[1].append(i)
+					else:
+						if temp_ram < 3400:
+							self.possible_indices[2].append(i)
+				
+
+			np.save(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy", self.possible_indices)
+
+		print(len(self.possible_indices[0]),len(self.possible_indices[1]),len(self.possible_indices[2]))	
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
 
 	def generateNewContainers(self, interval, layer_type = 0):
@@ -182,26 +219,41 @@ class MyAzure2019Workload(Workload):
 		#for _ in range(1):
 
 		# poisson arrival with mean 1.5
+<<<<<<< HEAD
 		for _ in range(max(1,np.random.poisson(self.num))):
+=======
+		for _ in range(np.random.poisson(1.5)):
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 			CreationID = self.creation_id
 			#index = self.possible_indices[randint(0,len(self.possible_indices)-1)]
 			index = random.choice(self.possible_indices[layer_type])
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
 			df2 = pd.read_csv(self.az_dpath+str(index)+'.csv', header=None)
+<<<<<<< HEAD
 			sla = round(random.gauss(self.meanSLA, self.sigmaSLA))
 			#TODO: ver linha a baixo
 			ips = df['CPU capacity provisioned [MHZ]'].to_numpy() * df2.to_numpy()[:, 0] / 100
 			IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max(sla,self.max_sla)]), sla, interval + sla)
 			RAMModel = RMBitbrain((df['Memory usage [KB]']/4000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
+=======
+			sla = random.gauss(self.meanSLA, self.sigmaSLA)
+			#TODO: ver linha a baixo
+			ips = df['CPU capacity provisioned [MHZ]'].to_numpy() * df2.to_numpy()[:, 0] / 100
+			IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max(int(1.2*sla),self.max_sla)]), int(1.2*sla), interval + sla)
+			RAMModel = RMBitbrain((df['Memory usage [KB]']/2000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 			disk_size  = self.disk_sizes[index % len(self.disk_sizes)]
 			DiskModel = DMBitbrain(disk_size, (df['Disk read throughput [KB/s]']/4000).to_list(), (df['Disk write throughput [KB/s]']/12000).to_list())
 			workloadlist.append((CreationID, layer_type, interval, IPSModel, RAMModel, DiskModel))
 			self.creation_id += 1
+<<<<<<< HEAD
 
 			# if layer_type != 0 we want to leave the loop, because we only want to generate 1 container
 			if layer_type != 0:
 				break
 
+=======
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 		self.createdContainers += workloadlist
 		self.deployedContainers += [False] * len(workloadlist)
 		return self.getUndeployedContainers()
@@ -227,7 +279,11 @@ class MyAzure2019Workload(Workload):
 		#
 
 		failurelist = []
+<<<<<<< HEAD
 		for _ in range(2):
+=======
+		for _ in range(1):
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 			CreationID = self.creationFailure_id
 			index = random.choice(self.possible_indices[host.layer_type])
 			df = pd.read_csv(self.dataset_path+'rnd/'+str(index)+'.csv', sep=';\t')
@@ -237,12 +293,21 @@ class MyAzure2019Workload(Workload):
 
 			ips = df['CPU capacity provisioned [MHZ]'].to_numpy() * df2.to_numpy()[:, 0] / 100
 			if 'CPU' in failure_type:
+<<<<<<< HEAD
 				IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max_duration]), sla, interval + sla)
 			else:
 				IPSModel = IPSMBitbrain(zeros, 0, sla, interval + sla)
 
 			if 'RAM' in failure_type:
 				RAMModel = RMBitbrain((df['Memory usage [KB]']/4000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
+=======
+				IPSModel = IPSMBitbrain((ips_multiplier*ips).tolist(), max((ips_multiplier*ips).tolist()[:max_duration]), int(1.2*sla), interval + sla)
+			else:
+				IPSModel = IPSMBitbrain(zeros, 0, int(1.2*sla), interval + sla)
+
+			if 'RAM' in failure_type:
+				RAMModel = RMBitbrain((df['Memory usage [KB]']/2000).to_list(), (df['Network received throughput [KB/s]']/500).to_list(), (df['Network transmitted throughput [KB/s]']/500).to_list())
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 			else:
 				RAMModel = RMBitbrain(zeros, zeros, zeros)
 				
@@ -257,9 +322,12 @@ class MyAzure2019Workload(Workload):
 	
 
 def test1():
+<<<<<<< HEAD
 	# Test 1: Find the best combination of IPS and RAM models the dataset
 	# OBJECTIVE: maximize the number of csv files that can be used
 
+=======
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 	dataset_path = 'simulator/workload/datasets/bitbrain/'
 	az_dpath = 'simulator/workload/datasets/azure_2019/'
 	
@@ -345,6 +413,7 @@ def test1():
 	plt.xticks(np.linspace(0, num_values, 5), np.linspace(bounds[1][0], bounds[1][1], 5))
 	plt.ylabel("mul_cpu")
 	plt.yticks(np.linspace(0, num_values, 5), np.linspace(bounds[0][0], bounds[0][1], 5))
+<<<<<<< HEAD
 	plt.savefig("matrix.png")
 
 
@@ -397,3 +466,6 @@ def test2():
 	plt.plot(list(nc3.keys()), list(nc3.values()), label="nc3")
 	plt.legend()
 	plt.savefig("nc.png")
+=======
+	plt.savefig("matrix.png")
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c

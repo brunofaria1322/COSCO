@@ -960,6 +960,7 @@ def multiprocessing_test_aux(i):
 if __name__ == '__main__':
     time_start = time.time()
     
+<<<<<<< HEAD
     generate_datasets()
 
     #failure_distribution()
@@ -967,6 +968,15 @@ if __name__ == '__main__':
     #train_and_evaluate_big_data()
 
     #big_merged_data_eda()
+=======
+    #generate_datasets()
+
+    failure_distribution()
+
+    #train_and_evaluate_big_data()
+
+    big_merged_data_eda()
+>>>>>>> bc28d1d734d4c1688ed2ae3d1cb951eedfa65b8c
 
     #test()
 
