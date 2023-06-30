@@ -544,10 +544,11 @@ def plot_cpu_ram(data, dataset_index):
                 data[h_i]["interval"],
                 data[h_i][component],
                 c=data[h_i][component_failures],
-                cmap="cool",
+                cmap="magma_r",
             )
 
-            ax[h_i].set_ylim([0, 100])
+            #ax[h_i].set_ylim([0, 100])
+            ax[h_i].set_xlim([0, len(data[h_i]["interval"])])
             ax[h_i].set_title(f"Host {h_i}")
 
         # ylabel in the middle
@@ -602,6 +603,32 @@ def plot_data():
         )
 
         plot_cpu_ram(data, i)
+
+        # plot number pf containers
+        plt.figure()
+        fig, ax = plt.subplots(
+            nrows=num_hosts, ncols=1, sharex=True, sharey=True, figsize=(10, 5)
+        )
+
+        for h_i in range(num_hosts):
+
+            # component usage
+            ax[h_i].plot(
+                data[h_i]["interval"],
+                data[h_i]["numcontainers"]
+            )
+
+            #ax[h_i].set_ylim([0, 100])
+            ax[h_i].set_xlim([0, len(data[h_i]["interval"])])
+            ax[h_i].set_title(f"Host {h_i}")
+
+        # ylabel in the middle
+        ax[np.floor(num_hosts / 2).astype(int)].set_ylabel(
+            f"Number of Containers", loc="center"
+        )
+        ax[-1].set_xlabel("Interval")
+        plt.tight_layout()
+        plt.savefig(f"{individual_path}data{i}/numcontainers.png")
 
 
 def big_merged_data_eda():
