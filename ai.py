@@ -263,6 +263,7 @@ def evaluate_datasets(failure="cpu"):
     plt.hist(metrics_12_3[3], bins=10, alpha=0.5)
     plt.legend(["Host1", "All hosts", "Host1 and Host2"])
     plt.savefig(f"{metrics_path}/f1_scores.png")
+    plt.savefig(f"{metrics_path}/f1_scores.svg")
 
     # plots for host1
     plot_metrics(metrics_1, "metrics_1")
@@ -304,6 +305,7 @@ def evaluate_datasets(failure="cpu"):
     )
 
     plt.savefig(f"{metrics_path}/cpu_12_3.png")
+    plt.savefig(f"{metrics_path}/cpu_12_3.svg")
 
 
 def train_and_evaluate_big_data():
@@ -368,6 +370,7 @@ def train_and_evaluate_big_data():
     plt.boxplot(metrics)
     plt.xticks([1, 2, 3, 4], ["Accuracy", "Precision", "Recall", "F1"])
     plt.savefig(f"{FIGURES_PATH}/metrics_big_data.png")
+    plt.savefig(f"{FIGURES_PATH}/metrics_big_data.svg")
 
     # train in all data
     merged_big_data = pd.DataFrame()
@@ -499,6 +502,9 @@ def plot_distribution(data, dataset_index):
     plt.savefig(
         f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/failure_distribution.png"
     )
+    plt.savefig(
+        f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/failure_distribution.svg"
+    )
 
 
 def plot_cpu_ram(data, dataset_index):
@@ -566,6 +572,7 @@ def plot_cpu_ram(data, dataset_index):
 
         plt.tight_layout()
         plt.savefig(f"{individual_data_path}{component}.png")
+        plt.savefig(f"{individual_data_path}{component}.svg")
 
     plot_usage_and_failures("cpu")
     plot_usage_and_failures("ram")
@@ -629,6 +636,7 @@ def plot_data():
         ax[-1].set_xlabel("Interval")
         plt.tight_layout()
         plt.savefig(f"{individual_path}data{i}/numcontainers.png")
+        plt.savefig(f"{individual_path}data{i}/numcontainers.svg")
 
 
 def big_merged_data_eda():
@@ -731,12 +739,14 @@ def big_merged_data_eda():
     corr = merged_big_data_cpu.corr()
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.png")
+    plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.svg")
 
     plt.figure()
     fig, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
     corr = merged_big_data_ram.corr()
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_ram.png")
+    plt.savefig(f"{big_analysis_path}correlation_matrix_ram.svg")
 
     # Correlation Matrix shows that there is no strong correlation between cpufailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
     # Whith this information, we will try to predict cpufailures using all the features and compare it to the results of using only the features that have a correlation with cpufailures
@@ -958,11 +968,13 @@ def big_merged_data_eda():
             sns.boxplot(x='cpufailures', y=feature, data=merged_big_data, ax=ax[1])
 
             plt.savefig(f'{big_analysis_path}pairs/{feature}_vs_numfailures.png')
+            plt.savefig(f'{big_analysis_path}pairs/{feature}_vs_numfailures.svg')
     
     # Pairplot
     plt.figure()
     sns.pairplot(merged_big_data, hue='cpufailures')
     plt.savefig(f'{big_analysis_path}pairs/pairplot.png')
+    plt.savefig(f'{big_analysis_path}pairs/pairplot.svg')
 
     """
 
@@ -1145,6 +1157,7 @@ def test():
                 sns.lineplot(x="interval", y=f"{r}_{hh}", data=host, ax=ax[i][j])
 
     plt.savefig("ram.png")
+    plt.savefig("ram.svg")
 
 
 def train_and_evaluate(data, y_col, model, data_test=None, binary=False):
@@ -1237,6 +1250,7 @@ def plot_metrics(metrics, name):
     plt.boxplot(metrics)
     plt.xticks([1, 2, 3, 4], ["Accuracy", "Precision", "Recall", "F1"])
     plt.savefig(f"{FIGURES_PATH}metrics/{name}.png")
+    plt.savefig(f"{FIGURES_PATH}metrics/{name}.svg")
 
 
 def multiprocessing_test():
