@@ -87,8 +87,7 @@ class Stats():
 		containerinfo = dict()
 		allCreatedContainers = [self.env.getContainerByCID(cid) for cid in list(np.where(self.workload.deployedContainers)[0])]
 		containerinfo['interval'] = self.env.interval
-		if self.datacenter.__class__.__name__ == 'Datacenter':
-			containerinfo['application'] = [self.env.getContainerByCID(cid).application for cid in list(np.where(self.workload.deployedContainers)[0])]
+		
 		containerinfo['ips'] = [(c.getBaseIPS() if c.active else 0) for c in allCreatedContainers]
 		containerinfo['create'] = [(c.createAt) for c in allCreatedContainers]
 		containerinfo['start'] = [(c.startAt) for c in allCreatedContainers]
