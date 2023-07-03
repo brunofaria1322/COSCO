@@ -21,9 +21,10 @@ from matplotlib.collections import LineCollection
 
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, chi2, f_classif
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import (
     accuracy_score,
+    classification_report,
     confusion_matrix,
     f1_score,
     precision_score,
@@ -500,22 +501,26 @@ def plot_distribution(data, dataset_index):
     ax.legend(loc="upper right")
 
     plt.savefig(
-        f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/failure_distribution.png"
+        f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/png/failure_distribution.png"
     )
     plt.savefig(
-        f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/failure_distribution.svg"
+        f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/svg/failure_distribution.svg"
     )
 
 
 def plot_cpu_ram(data, dataset_index):
-    num_hosts = len(data)
+    num_hosts = int(len(data)/2)
     individual_data_path = f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/"
 
     def plot_usage_and_failures(component):
         component_failures = f"{component}failures"
-        plt.figure()
-        fig, ax = plt.subplots(
-            nrows=num_hosts, ncols=1, sharex=True, sharey=True, figsize=(10, 5)
+        
+        fig_hos, ax_hos = plt.subplots(
+            nrows=num_hosts, ncols=1, sharex=True, sharey=True, figsize=(10, 10)
+        )
+
+        fig_all, ax_all = plt.subplots(
+            nrows=num_hosts * 2, ncols=1, sharex=True, sharey=True, figsize=(10, 15)
         )
 
         # each row represents a different host
@@ -526,53 +531,130 @@ def plot_cpu_ram(data, dataset_index):
         most_failures = 0
         most_failures_index = 0
 
-        scs = [None for _ in range(num_hosts)]
+        scs_hos = [None for _ in range(num_hosts)]
 
-        for h_i in range(num_hosts):
+        for h_i in range(num_hosts * 2):
             # print(f'Host {h_i}')
             # print(f'{component.upper()}: {data[h_i][component]}')
             # print(f'{component.upper()} Failures: {data[h_i][component_failures]}')
 
-            if max(data[h_i][component_failures]) > most_failures:
-                most_failures = max(data[h_i][component_failures])
-                most_failures_index = h_i
-
-            # component usage
-            ax[h_i].plot(
+            ### INDIVIDUAL ###
+            fig_ind, ax_ind = plt.subplots(figsize=(10, 5))
+            ax_ind.plot(
                 data[h_i]["interval"],
                 data[h_i][component],
                 color="black",
                 label=f"{component.upper()} Usage",
             )
 
-            # component failures
-            scs[h_i] = ax[h_i].scatter(
+            if h_i < num_hosts:
+                # component failures
+                sc = ax_ind.scatter(
+                    data[h_i]["interval"],
+                    data[h_i][component],
+                    c=data[h_i][component_failures],
+                    cmap="magma_r",
+                )
+
+                fig_ind.legend(
+                    *sc.legend_elements(),
+                    bbox_to_anchor=(1.13, 0.62),
+                    title="Failure Intensity",
+                )
+
+            ax_ind.set_xlabel("Interval")
+            ax_ind.set_ylabel(f"{component.upper()} Usage (%)")
+
+            ax_ind.set_xlim([0, len(data[h_i]["interval"])])
+            # ax_ind.set_ylim([0, 100])
+
+            fig_ind.legend(*ax_ind.get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72))
+
+            fig_ind.tight_layout()
+            fig_ind.savefig(f"{individual_data_path}png/indiv/{component}_{h_i}.png")
+            fig_ind.savefig(f"{individual_data_path}svg/indiv/{component}_{h_i}.svg")
+
+            ### HOST PLOTS ###
+            if h_i < num_hosts:
+                if max(data[h_i][component_failures]) > most_failures:
+                    most_failures = max(data[h_i][component_failures])
+                    most_failures_index = h_i
+
+                # component usage
+                ax_hos[h_i].plot(
+                    data[h_i]["interval"],
+                    data[h_i][component],
+                    color="black",
+                    label=f"{component.upper()} Usage",
+                )
+
+                # component failures
+                scs_hos[h_i] = ax_hos[h_i].scatter(
+                    data[h_i]["interval"],
+                    data[h_i][component],
+                    c=data[h_i][component_failures],
+                    cmap="magma_r",
+                )
+
+                #ax_hos[h_i].set_ylim([0, 100])
+                ax_hos[h_i].set_xlim([0, len(data[h_i]["interval"])])
+                ax_hos[h_i].set_title(f"Host {h_i}")
+
+            ### ALL PLOTS (with replicas) ###
+            # component usage
+            ax_all[h_i].plot(
                 data[h_i]["interval"],
                 data[h_i][component],
-                c=data[h_i][component_failures],
-                cmap="magma_r",
+                color="black",
+                label=f"{component.upper()} Usage",
             )
 
-            #ax[h_i].set_ylim([0, 100])
-            ax[h_i].set_xlim([0, len(data[h_i]["interval"])])
-            ax[h_i].set_title(f"Host {h_i}")
+            if h_i < num_hosts:
 
-        # ylabel in the middle
-        ax[np.floor(num_hosts / 2).astype(int)].set_ylabel(
-            f"{component.upper()} Usage (%)", loc="center"
-        )
-        plt.xlabel("Interval")
+                # component failures
+                ax_all[h_i].scatter(
+                    data[h_i]["interval"],
+                    data[h_i][component],
+                    c=data[h_i][component_failures],
+                    cmap="magma_r",
+                )
 
-        fig.legend(*ax[0].get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72))
-        fig.legend(
-            *scs[most_failures_index].legend_elements(),
+            #ax_all[h_i].set_ylim([0, 100])
+            ax_all[h_i].set_xlim([0, len(data[h_i]["interval"])])
+
+        # HOST PLOTS
+        # xlabel and ylabel in the middle
+        fig_hos.supylabel(f"{component.upper()} Usage (%)")
+        fig_hos.supxlabel("Interval")
+
+
+        fig_hos.legend(*ax_hos[0].get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72))
+        fig_hos.legend(
+            *scs_hos[most_failures_index].legend_elements(),
             bbox_to_anchor=(1.13, 0.62),
             title="Failure Intensity",
         )
 
-        plt.tight_layout()
-        plt.savefig(f"{individual_data_path}{component}.png")
-        plt.savefig(f"{individual_data_path}{component}.svg")
+        fig_hos.tight_layout()
+        fig_hos.savefig(f"{individual_data_path}png/{component}.png")
+        fig_hos.savefig(f"{individual_data_path}png/{component}.svg")
+
+        # ALL PLOTS
+        # xlabel and ylabel in the middle
+        fig_all.supylabel(f"{component.upper()} Usage (%)")
+        fig_all.supxlabel("Interval")
+
+
+        fig_all.legend(*ax_all[0].get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72))
+        fig_all.legend(
+            *scs_hos[most_failures_index].legend_elements(),
+            bbox_to_anchor=(1.13, 0.62),
+            title="Failure Intensity",
+        )
+
+        fig_all.tight_layout()
+        fig_all.savefig(f"{individual_data_path}png/{component}_all.png")
+        fig_all.savefig(f"{individual_data_path}png/{component}_all.svg")
 
     plot_usage_and_failures("cpu")
     plot_usage_and_failures("ram")
@@ -585,6 +667,10 @@ def plot_data():
 
     for i in range(NUMBER_OF_SIMULATIONS):
         os.makedirs(os.path.dirname(f"{individual_path}data{i}/"), exist_ok=True)
+        os.makedirs(os.path.dirname(f"{individual_path}data{i}/png/"), exist_ok=True)
+        os.makedirs(os.path.dirname(f"{individual_path}data{i}/png/indiv/"), exist_ok=True)
+        os.makedirs(os.path.dirname(f"{individual_path}data{i}/svg/"), exist_ok=True)
+        os.makedirs(os.path.dirname(f"{individual_path}data{i}/svg/indiv/"), exist_ok=True)
 
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
@@ -597,27 +683,34 @@ def plot_data():
         headers = data_temp.columns
 
         # create list of copies of data
-        data = [data_temp.copy() for _ in range(num_hosts)]
+        data = [data_temp.copy() for _ in range(2 * num_hosts)]
 
-        for j in range(num_hosts):
+        for j in range(len(data)):
             for header in headers:
                 if header != "interval":
                     data[j][header] = data[j][header].apply(lambda x: json.loads(x)[j])
 
         plot_distribution(
-            data,
+            data[:num_hosts],   # only hosts, not replicas
             i,
         )
 
         plot_cpu_ram(data, i)
 
         # plot number pf containers
-        plt.figure()
         fig, ax = plt.subplots(
             nrows=num_hosts, ncols=1, sharex=True, sharey=True, figsize=(10, 5)
         )
 
         for h_i in range(num_hosts):
+            # INDIVIDUAL PLOT
+            fig_in, ax_in = plt.subplots(figsize=(10, 5))
+            ax_in.plot(
+                data[h_i]["interval"],
+                data[h_i]["numcontainers"]
+            )
+
+            # SUBPLOT
 
             # component usage
             ax[h_i].plot(
@@ -708,6 +801,10 @@ def big_merged_data_eda():
 
     print(merged_big_data_cpu.shape, merged_big_data_ram.shape)
 
+    # 0. Divide by 2 the number of failures (each failure level corresponds to 2 containers)
+    merged_big_data_cpu["cpufailures"] = merged_big_data_cpu["cpufailures"] // 2
+    merged_big_data_ram["ramfailures"] = merged_big_data_ram["ramfailures"] // 2
+
     # following https://www.digitalocean.com/community/tutorials/exploratory-data-analysis-python
 
     # 1. Basic Information
@@ -752,6 +849,8 @@ def big_merged_data_eda():
     # Whith this information, we will try to predict cpufailures using all the features and compare it to the results of using only the features that have a correlation with cpufailures
     #   wich are [cpu, apparentips]
 
+    """
+
     # Train and Evaluate with all features - CPU
     metrics, _ = train_and_evaluate(
         merged_big_data_cpu,
@@ -768,13 +867,20 @@ def big_merged_data_eda():
     )
 
     print(
-        f"""\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
+        f'''\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
         mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
         median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        """
+        '''\
     )
+
+    #   METRICS ALL FEATURES                                METRICS ALL FEATURES (binary)                   
+    #           accuracy  precision recall    f1        		accuracy  precision recall    f1        
+    #   mean	0.9318    0.7297    0.5922    0.6384    		0.9459    0.8306    0.6780    0.7466    
+    #   median	0.9317    0.7359    0.5920    0.6388    		0.9460    0.8302    0.6773    0.7462    
+    #   std	    0.0012    0.0240    0.0119    0.0145    		0.0010    0.0074    0.0069    0.0051    
+       
 
     # Train and Evaluate with all features - RAM
     metrics, _ = train_and_evaluate(
@@ -792,17 +898,21 @@ def big_merged_data_eda():
     )
 
     print(
-        f"""\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
+        f'''\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
         \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
         mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
         median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        """
+        '''\
     )
 
-    exit()
+    #   METRICS ALL FEATURES                            	METRICS ALL FEATURES (binary)                   
+    #   	    accuracy  precision recall    f1        		accuracy  precision recall    f1        
+    #   mean	0.8801    0.2511    0.2500    0.2355    		0.8793    0.1341    0.0044    0.0085    
+    #   median	0.8801    0.2457    0.2500    0.2353    		0.8794    0.1299    0.0042    0.0082    
+    #   std	    0.0014    0.0180    0.0003    0.0006    		0.0015    0.0316    0.0011    0.0022    
+        
 
-    """
 
     # Train and Evaluate with all features
     metrics, _ = train_and_evaluate(merged_big_data, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
@@ -816,12 +926,6 @@ def big_merged_data_eda():
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         ''')
     
-    #   METRICS ALL FEATURES                                    METRICS ALL FEATURES (binary)
-    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
-    #   mean    0.9535    0.9516    0.9535    0.9523                    0.9645    0.8807    0.8115    0.8446
-    #   median  0.9535    0.9515    0.9535    0.9522                    0.9646    0.8801    0.8120    0.8450
-    #   std     0.0010    0.0011    0.0010    0.0010                    0.0008    0.0053    0.0058    0.0035
-
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE
     metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
@@ -834,12 +938,6 @@ def big_merged_data_eda():
         median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         ''')
-    
-    #   METRICS WITHOUT HOST_LTYPE                              METRICS WITHOUT HOST_LTYPE (binary)
-    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
-    #   mean    0.9644    0.9635    0.9644    0.9637                    0.9647    0.8822    0.8120    0.8456
-    #   median  0.9644    0.9635    0.9644    0.9637                    0.9647    0.8838    0.8126    0.8461
-    #   std     0.0009    0.0009    0.0009    0.0009                    0.0008    0.0065    0.0072    0.0042
     
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE AND IPSCAP
@@ -854,12 +952,6 @@ def big_merged_data_eda():
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         ''')
     
-    #   METRICS WITHOUT HOST_LTYPE AND IPSCAP                   METRICS WITHOUT HOST_LTYPE AND IPSCAP (binary)
-    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
-    #   mean    0.9640    0.9631    0.9640    0.9634                    0.9642    0.8789    0.8106    0.8433
-    #   median  0.9640    0.9632    0.9640    0.9634                    0.9641    0.8800    0.8105    0.8432
-    #   std     0.0008    0.0008    0.0008    0.0008                    0.0009    0.0065    0.0061    0.0041
-
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS
     metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
@@ -873,11 +965,6 @@ def big_merged_data_eda():
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         ''')
 
-    #   METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS          METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (binary)
-    #           accuracy  precision recall    f1                        accuracy  precision recall    f1
-    #   mean    0.9631    0.9622    0.9631    0.9625                    0.9632    0.8730    0.8096    0.8401
-    #   median  0.9631    0.9623    0.9631    0.9626                    0.9632    0.8735    0.8103    0.8398
-    #   std     0.0011    0.0011    0.0011    0.0011                    0.0008    0.0055    0.0067    0.0039
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS BUT WITH SVM
     metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', SVC(), binary=False)
@@ -891,12 +978,7 @@ def big_merged_data_eda():
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         ''')
     
-    #   METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM)    METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM) (binary)
-    #           accuracy  precision recall    f1                        accuracy  precision recall    f1        
-    #   mean    0.8813    0.8031    0.8813    0.8263                    0.8837    0.8343    0.0285    0.0551    
-    #   median  0.8817    0.7916    0.8817    0.8267                    0.8835    0.8354    0.0283    0.0548    
-    #   std     0.0020    0.0302    0.0020    0.0029                    0.0018    0.0420    0.0023    0.0043 
-    
+
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE
     metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
@@ -909,12 +991,6 @@ def big_merged_data_eda():
         median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         ''')
-    
-    #   METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE    METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (binary)
-    #           accuracy  precision recall    f1                        accuracy  precision recall    f1        
-    #   mean    0.9456    0.9434    0.9456    0.9443                    0.9590    0.8543    0.7901    0.8209    
-    #   median  0.9458    0.9435    0.9458    0.9444                    0.9590    0.8554    0.7897    0.8206    
-    #   std     0.0013    0.0014    0.0013    0.0013                    0.0009    0.0050    0.0059    0.0038    
     
 
     # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE BUT WITH SVM
@@ -948,7 +1024,34 @@ def big_merged_data_eda():
     # Remove ltype and ips cap?
     # normalize data?
     # remove outliers? is there any?
+    
+    
+    # CPU SVM with grid search
+    params = {
+        'C': [0.1, 1, 10, 100, 1000],
+        'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+        'kernel': ['rbf', 'linear', 'poly', 'sigmoid']
+    }
+    
+    # Train and Evaluate with all features
+    print('CPU')
+    print('all features')
+    train_and_evaluate(merged_big_data_cpu, 'cpufailures', SVC(), binary=False, grid_search=True, param_grid=params)
+    # binary classification
+    print('binary classification')
+    train_and_evaluate(merged_big_data_cpu, 'cpufailures', SVC(), binary=True, grid_search=True, param_grid=params)
 
+
+    # RAM
+    print('RAM')
+    # Train and Evaluate with all features
+    print('all features')
+    train_and_evaluate(merged_big_data_ram, 'ramfailures', SVC(), binary=False, grid_search=True, param_grid=params)
+    # binary classification
+    print('binary classification')
+    train_and_evaluate(merged_big_data_ram, 'ramfailures', SVC(), binary=True, grid_search=True, param_grid=params)
+    
+    exit()
     """
     # plot every feature against cpufailures
     for feature in merged_big_data.columns:
@@ -1160,7 +1263,7 @@ def test():
     plt.savefig("ram.svg")
 
 
-def train_and_evaluate(data, y_col, model, data_test=None, binary=False):
+def train_and_evaluate(data, y_col, model, data_test=None, binary=False, grid_search=False, param_grid=None):
     """
     Train and evaluate a model using the given data and model
     It will run NUMBER_OF_REPETITIONS times
@@ -1188,6 +1291,39 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False):
 
     if binary:
         data[y_col] = data[y_col].apply(lambda x: 1 if x > 0 else 0)
+
+    if grid_search:
+        if not param_grid:
+            print("param_grid must be provided for grid search")
+            return
+        
+        # split data if test data is not provided
+        if data_test is None:
+            train, test = train_test_split(data, test_size=0.3, shuffle=True)
+        else:
+            train = data
+            test = data_test
+
+        x_train = train.drop(columns=[y_col])
+        y_train = train[y_col]
+
+        x_test = test.drop(columns=[y_col])
+        y_test = test[y_col]
+
+        grid = GridSearchCV(model, param_grid, refit=True, verbose=3, n_jobs=-1)
+
+        grid.fit(x_train, y_train)
+
+        print(grid.best_params_)
+        print(grid.best_estimator_)
+
+        y_pred = grid.predict(x_test)
+
+        print(classification_report(y_test, y_pred))
+        
+        return
+
+        
 
     metrics = [[], [], [], []]
     best_f1 = 0
@@ -1289,11 +1425,11 @@ if __name__ == "__main__":
 
     # failure_distribution()
 
-    plot_data()
+    # plot_data()
 
     # train_and_evaluate_big_data()
 
-    # big_merged_data_eda()
+    big_merged_data_eda()
 
     # test()
 
