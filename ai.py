@@ -1,6 +1,4 @@
 import ast
-import filecmp
-from multiprocessing import Pool
 import time
 import pandas as pd
 import numpy as np
@@ -16,7 +14,6 @@ sns.set_palette(COLOR_PALETTE)
 
 
 from matplotlib.colors import ListedColormap
-from matplotlib.collections import LineCollection
 
 
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
@@ -27,11 +24,10 @@ from sklearn.metrics import (
     classification_report,
     confusion_matrix,
     f1_score,
+    make_scorer,
     precision_score,
     recall_score,
 )
-
-from sklearn.svm import SVC
 
 from cosco import (
     runCOSCO,
@@ -97,23 +93,6 @@ def generate_datasets():
 
         # copy log file to datapath
         os.system(f"cp {CSV_PATH} {datapath_i}")
-
-    """
-    # create pool of processes
-    with Pool(processes=NUMBER_OF_SIMULATIONS) as p:
-        p.map(call_cosco, range(NUMBER_OF_SIMULATIONS))
-
-
-    # verify if all files are different
-    for i in range(NUMBER_OF_SIMULATIONS):
-        for j in range(i+1, NUMBER_OF_SIMULATIONS):
-            datapath_i = f"{DATAPATH}data/data{i}.csv"
-            datapath_j = f"{DATAPATH}data/data{j}.csv"
-            if filecmp.cmp(datapath_i, datapath_j):
-                print(f"Files {i+1} and {j+1} are equal. Deleting {i+1} and re-generating.")
-                os.remove(datapath_i)
-                call_cosco(i)
-    """
 
 
 def call_cosco(i):
@@ -488,7 +467,7 @@ def plot_distribution(data, dataset_index):
                     va="bottom",
                 )
 
-    ax.set_xlabel("Failure Intensity")
+    ax.set_xlabel("Stress Intensity")
     ax.set_ylabel("Number of Occurrences")
 
     ax.set_xticks(x + (num_hosts * 2 - 1) / 2 * width)
@@ -559,7 +538,7 @@ def plot_cpu_ram(data, dataset_index):
                 fig_ind.legend(
                     *sc.legend_elements(),
                     bbox_to_anchor=(1.13, 0.62),
-                    title="Failure Intensity",
+                    title="Stress Intensity",
                 )
 
             ax_ind.set_xlabel("Interval")
@@ -632,7 +611,7 @@ def plot_cpu_ram(data, dataset_index):
         fig_hos.legend(
             *scs_hos[most_failures_index].legend_elements(),
             bbox_to_anchor=(1.13, 0.62),
-            title="Failure Intensity",
+            title="Stress Intensity",
         )
 
         fig_hos.tight_layout()
@@ -649,7 +628,7 @@ def plot_cpu_ram(data, dataset_index):
         fig_all.legend(
             *scs_hos[most_failures_index].legend_elements(),
             bbox_to_anchor=(1.13, 0.62),
-            title="Failure Intensity",
+            title="Stress Intensity",
         )
 
         fig_all.tight_layout()
@@ -737,119 +716,398 @@ def big_merged_data_eda():
 
     big_analysis_path = FIGURES_PATH + "analysis/big_merged_data_eda/"
     os.makedirs(os.path.dirname(big_analysis_path), exist_ok=True)
+
     os.makedirs(os.path.dirname(big_analysis_path + "pairs/"), exist_ok=True)
+    os.makedirs(os.path.dirname(big_analysis_path + "pairs/cpu/"), exist_ok=True)
+    os.makedirs(os.path.dirname(big_analysis_path + "pairs/ram/"), exist_ok=True)
+
+    os.makedirs(os.path.dirname(big_analysis_path + "dim_red/"), exist_ok=True)
 
     # load and merge data
-    merged_big_data_cpu = pd.DataFrame()
-    merged_big_data_ram = pd.DataFrame()
 
-    cpu_headers = [
-        "cpu",
-        "numcontainers",
-        "baseips",
-        "ipsavailable",
-        "ipscap",
-        "apparentips",
-        "cpufailures",
-    ]
-    ram_headers = [
-        "ram",
-        "numcontainers",
-        "ram_s",
-        "ram_r",
-        "ram_w",
-        "ramavailable_s",
-        "ramavailable_r",
-        "ramavailable_w",
-        "ramfailures",
-    ]
+    cpu_headers = {
+        "cpu": float,
+        "numcontainers": int,
+        "baseips": float,
+        "ipsavailable": float,
+        "ipscap": float,
+        "apparentips": float,
+        "cpufailures": int,
+    }
+
+    ram_headers = {
+        "ram": float,
+        "numcontainers": int,
+        "ram_s": float,
+        "ram_r": float,
+        "ram_w": float,
+        "ramavailable_s": float,
+        "ramavailable_r": float,
+        "ramavailable_w": float,
+        "ramfailures": int,
+    }
+
+    # create list for all dataframes
+    data_cpu = [None] * NUMBER_OF_SIMULATIONS
+    data_ram = [None] * NUMBER_OF_SIMULATIONS
 
     for i in range(NUMBER_OF_SIMULATIONS):
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
 
         num_hosts = int(len(json.loads(data_temp["cpu"][0])) / 2)
-        # print(f'Number of hosts: {num_hosts}')
 
-        data_temp_cpu = data_temp[cpu_headers]
-        data_temp_ram = data_temp[ram_headers]
+        data_temp_cpu = data_temp[cpu_headers.keys()]
+        data_temp_ram = data_temp[ram_headers.keys()]
 
-        # create list of copies of data
-        data_cpu = [data_temp_cpu.copy() for _ in range(num_hosts)]
-        data_ram = [data_temp_ram.copy() for _ in range(num_hosts)]
+        data_temp_cpu = data_temp_cpu.applymap(
+            lambda x: json.loads(x)[:num_hosts]
+        ).apply(pd.Series.explode)
+        data_temp_ram = data_temp_ram.applymap(
+            lambda x: json.loads(x)[:num_hosts]
+        ).apply(pd.Series.explode)
 
-        for j in range(num_hosts):
-            for header in cpu_headers:
-                data_cpu[j][header] = data_cpu[j][header].apply(
-                    lambda x: json.loads(x)[j]
-                )
+        data_cpu[i] = data_temp_cpu
+        data_ram[i] = data_temp_ram
 
-            for header in ram_headers:
-                data_ram[j][header] = data_ram[j][header].apply(
-                    lambda x: json.loads(x)[j]
-                )
-
-        for j in range(num_hosts):
-            # data_cpu[j]['host_ltype'] = j
-            # data_ram[j]['host_ltype'] = j
-
-            merged_big_data_cpu = merged_big_data_cpu.append(data_cpu[j])
-            merged_big_data_ram = merged_big_data_ram.append(data_ram[j])
-
-    merged_big_data_cpu = merged_big_data_cpu.reset_index(drop=True)
-    merged_big_data_ram = merged_big_data_ram.reset_index(drop=True)
+    merged_big_data_cpu = pd.concat(data_cpu, ignore_index=True)
+    merged_big_data_ram = pd.concat(data_ram, ignore_index=True)
 
     print(merged_big_data_cpu.shape, merged_big_data_ram.shape)
+    # (90090, 7) (90090, 9)
 
     # 0. Divide by 2 the number of failures (each failure level corresponds to 2 containers)
     merged_big_data_cpu["cpufailures"] = merged_big_data_cpu["cpufailures"] // 2
     merged_big_data_ram["ramfailures"] = merged_big_data_ram["ramfailures"] // 2
+
+    # attribute types
+    merged_big_data_cpu = merged_big_data_cpu.astype(cpu_headers)
+    merged_big_data_ram = merged_big_data_ram.astype(ram_headers)
 
     # following https://www.digitalocean.com/community/tutorials/exploratory-data-analysis-python
 
     # 1. Basic Information
 
     print("\n---- INFO ----")
-    print("CPU:\n", merged_big_data_cpu.info())
-    print("\nRAM:\n", merged_big_data_ram.info())
+    print("CPU:")
+    print(merged_big_data_cpu.info())
+    print("\nRAM:")
+    print(merged_big_data_ram.info())
 
     print("\n---- DESCRIPTION ----")
     print("CPU:\n", merged_big_data_cpu.describe())
     print("\nRAM:\n", merged_big_data_ram.describe())
 
-    # 2. Duplicate Values
+    #   ---- DESCRIPTION ----
+    #   CPU:
+    #                 cpu  numcontainers      baseips  ipsavailable       ipscap  apparentips  cpufailures
+    #   count    90090.0        90090.0      90090.0       90090.0      90090.0      90090.0      90090.0
+    #   mean   17.614404       7.298912   755.227653   8658.772347       9414.0  1430.991764     0.144655
+    #   std     8.116511       2.488022   406.037958   4828.979276  5018.971237   686.680416     0.425868
+    #   min          0.0            0.0          0.0   2249.415044       4029.0          0.0          0.0
+    #   25%    11.764706            6.0   458.937091   3675.184072       4029.0        924.0          0.0
+    #   50%    16.207496            7.0   682.406998   7397.433305       8102.0       1304.0          0.0
+    #   75%    22.154409            9.0   979.996389  14807.924211      16111.0       1825.0          0.0
+    #   max    65.053363           20.0  3439.983182       16111.0      16111.0       5678.0          3.0
+    #   
+    #   RAM:
+    #                 ram  numcontainers       ram_s      ram_r      ram_w  ramavailable_s  ramavailable_r  ramavailable_w  ramfailures
+    #   count    90090.0        90090.0     90090.0    90090.0    90090.0         90090.0         90090.0         90090.0      90090.0
+    #   mean      4.0001       7.298912  506.462041   1.391615   1.139732    18105.204626      368.121718      256.110268     0.144367
+    #   std     3.672401       2.488022  502.913795   4.792341   4.561932    12171.185337        8.151337       43.073732     0.424373
+    #   min          0.0            0.0         0.0        0.0        0.0       2852.3406      290.007467      197.101333          0.0
+    #   25%     1.217631            6.0  186.818967     0.0152     0.0092     4129.343833        359.9776      199.991867          0.0
+    #   50%     2.901928            7.0    333.4441      0.038   0.030467    16799.478733        371.9444        266.7152          0.0
+    #   75%     5.695342            9.0  604.677533   0.229067   0.196667    33291.646067      375.535067      304.739167          0.0
+    #   max    33.589276           20.0   4966.5762  74.025333  69.648667         34360.0          376.54           305.0          3.0
 
+
+    # 2. Duplicate Values
     print(
         f"\n---- DUPLICATES:\tCPU: {merged_big_data_cpu.duplicated().sum()}\tRAM: {merged_big_data_ram.duplicated().sum()}"
     )
+    #   ---- DUPLICATES:        CPU: 279        RAM: 274
+
+    # 2.1. Drop duplicates
+    merged_big_data_cpu.drop_duplicates(inplace=True)
+    merged_big_data_ram.drop_duplicates(inplace=True)
 
     # 5. Missing Values
     print(
         f"\n---- MISSING VALUES ----\nCPU:\n{merged_big_data_cpu.isnull().sum()}\nRAM:\n{merged_big_data_ram.isnull().sum()}"
     )
+    #   None
 
-    # """
+    # Count number of failures
+    print(
+        f"\n---- CPU FAILURES ----\n{merged_big_data_cpu['cpufailures'].value_counts()}"
+    )
+    #   0    79173
+    #   1     8446
+    #   2     1990
+    #   3      202
+
+    print(
+        f"\n---- RAM FAILURES ----\n{merged_big_data_ram['ramfailures'].value_counts()}"
+    )
+    #   0    79176
+    #   1     8456
+    #   2     2002
+    #   3      182
+
+
+    """
 
     # 10. Correlation Matrix
     plt.figure()
-    fig, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
+    _, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
     corr = merged_big_data_cpu.corr()
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.png")
     plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.svg")
 
+    # Correlation Matrix shows that there is no strong correlation between cpufailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
+    # With this information, we will try to predict cpufailures using all the features and compare it to the results of using only the features that have a correlation with cpufailures
+    #   wich are [cpu, apparentips]
+
     plt.figure()
-    fig, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
+    _, ax = plt.subplots(figsize=(10, 9), tight_layout=True)
     corr = merged_big_data_ram.corr()
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_ram.png")
     plt.savefig(f"{big_analysis_path}correlation_matrix_ram.svg")
 
-    # Correlation Matrix shows that there is no strong correlation between cpufailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
-    # Whith this information, we will try to predict cpufailures using all the features and compare it to the results of using only the features that have a correlation with cpufailures
-    #   wich are [cpu, apparentips]
+    # Correlation Matrix shows no strong correlation between ramfailures and others
+    plt.close('all')
+
+    # plot every feature against cpufailures
+    for feature in merged_big_data_cpu.columns:
+        if feature != 'cpufailures':
+            # 2 subplots:
+                # 1. scatter plot
+                # 2. box plot
+
+            plt.figure()
+            fig, ax = plt.subplots(1,2, figsize=(10, 5), tight_layout=True)
+
+
+            # 1. scatter plot
+            sns.scatterplot(x='cpufailures', y=feature, data=merged_big_data_cpu, ax=ax[0])
+
+            # 2. box plot
+            sns.boxplot(x='cpufailures', y=feature, data=merged_big_data_cpu, ax=ax[1])
+
+            plt.savefig(f'{big_analysis_path}pairs/cpu/{feature}_vs_numfailures.png')
+            plt.savefig(f'{big_analysis_path}pairs/cpu/{feature}_vs_numfailures.svg')
+
+    for feature in merged_big_data_ram.columns:
+        if feature != 'ramfailures':
+            # 2 subplots:
+                # 1. scatter plot
+                # 2. box plot
+
+            plt.figure()
+            fig, ax = plt.subplots(1,2, figsize=(10, 5), tight_layout=True)
+
+
+            # 1. scatter plot
+            sns.scatterplot(x='ramfailures', y=feature, data=merged_big_data_ram, ax=ax[0])
+
+            # 2. box plot
+            sns.boxplot(x='ramfailures', y=feature, data=merged_big_data_ram, ax=ax[1])
+
+            plt.savefig(f'{big_analysis_path}pairs/ram/{feature}_vs_numfailures.png')
+            plt.savefig(f'{big_analysis_path}pairs/ram/{feature}_vs_numfailures.svg')
+
+    plt.close('all')
+
+    
+    # Pairplot
+    plt.figure()
+    sns.pairplot(merged_big_data_cpu, hue='cpufailures')
+    plt.savefig(f'{big_analysis_path}pairs/pairplot_cpu.png')
+    plt.savefig(f'{big_analysis_path}pairs/pairplot_cpu.svg')
+
+    plt.figure()
+    sns.pairplot(merged_big_data_ram, hue='ramfailures')
+    plt.savefig(f'{big_analysis_path}pairs/pairplot_ram.png')
+    plt.savefig(f'{big_analysis_path}pairs/pairplot_ram.svg')
+    plt.close('all')
 
     """
+    # FEATURE SELECTION - CPU
+
+    # select k best features
+    # https://www.simplilearn.com/tutorials/machine-learning-tutorial/feature-selection-in-machine-learning
+    # the aforementioned tutorial mentions that, for numerical input and categorical output, we should use ANOVA Correlation Coefficient (linear) or Kendall's rank coefficient (non-linear)
+
+    '''
+    print("\n---- SELECT K BEST FEATURES - CPU ----")
+
+    print("\n\t-- ANOVA --")
+
+    best_features = SelectKBest(score_func=f_classif, k="all")
+
+    fit = best_features.fit(
+        merged_big_data_cpu.drop(columns=["cpufailures"]),
+        merged_big_data_cpu["cpufailures"]
+    )
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(
+        merged_big_data_cpu.drop(columns=["cpufailures"]).columns
+    )
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ["Specs", "Score"]
+
+    print(featureScores.sort_values(by="Score", ascending=False))
+
+    #              Specs        Score
+    #   0            cpu  1657.570152
+    #   5    apparentips  1639.296489
+    #   1  numcontainers     4.107048
+    #   2        baseips     2.212147
+    #   3   ipsavailable     0.710469
+    #   4         ipscap     0.541987
+
+    """
+    print('\n\t-- KENDALL --')
+
+    best_features = SelectKBest(score_func=kendalltau, k='all')
+
+    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+
+    print(featureScores.sort_values(by='Score', ascending=False))
+    """
+
+    print("\n\t-- CHI2 --")
+
+    best_features = SelectKBest(score_func=chi2, k="all")
+
+    fit = best_features.fit(
+        merged_big_data_cpu.drop(columns=["cpufailures"]),
+        merged_big_data_cpu["cpufailures"].astype("category")
+    )
+
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(
+        merged_big_data_cpu.drop(columns=["cpufailures"]).columns
+    )
+
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ["Specs", "Score"]
+
+    print(featureScores.sort_values(by="Score", ascending=False))
+
+    #              Specs         Score
+    #   5    apparentips  1.516488e+06
+    #   0            cpu  1.737074e+04
+    #   3   ipsavailable  5.738748e+03
+    #   4         ipscap  4.353412e+03
+    #   2        baseips  1.433564e+03
+    #   1  numcontainers  1.017751e+01
+
+
+    # FEATURE IMPORTANCE - CPU
+    print("\n---- FEATURE IMPORTANCE ----")
+
+    model = ExtraTreesClassifier()
+    model.fit(
+        merged_big_data_cpu.drop(columns=["cpufailures"]),
+        merged_big_data_cpu["cpufailures"],
+    )
+
+    print(model.feature_importances_)
+
+    feat_importances = pd.Series(
+        model.feature_importances_,
+        merged_big_data_cpu.drop(columns=["cpufailures"]).columns
+    )
+    print(feat_importances.sort_values(ascending=False))
+
+    #   numcontainers    0.296458
+    #   cpu              0.210491
+    #   apparentips      0.207965
+    #   ipsavailable     0.139228
+    #   baseips          0.136735
+    #   ipscap           0.009123
+
+    '''
+
+    """
+    # PCA
+    print("\n---- PCA ----")
+
+    pca = PCA(n_components=2)
+    principalComponents = pca.fit_transform(
+        merged_big_data_cpu.drop(columns=["cpufailures"])
+    )
+    principalDf = pd.DataFrame(
+        data=principalComponents,
+        columns=["principal component 1", "principal component 2"],
+    )
+
+    finalDf = pd.concat(
+        [principalDf, merged_big_data_cpu[["cpufailures"]]], axis=1
+    )
+
+    print(pca.explained_variance_ratio_)
+    # [0.99000531 0.00887902]
+
+    plt.figure(figsize=(8, 6))
+    sns.scatterplot(
+        x="principal component 1",
+        y="principal component 2",
+        hue="cpufailures",
+        data=finalDf,
+        s=100,
+        alpha=0.75,
+    )
+
+    plt.savefig(f"{big_analysis_path}dim_red/pca_cpu.png")
+    plt.savefig(f"{big_analysis_path}dim_red/pca_cpu.svg")
+
+    # TSNE
+    # it takes a lot of time to run (~650s)
+    print("\n---- TSNE ----")
+
+    tsne = TSNE(n_components=2)
+    tsne_results = tsne.fit_transform(
+        merged_big_data_cpu.drop(columns=["cpufailures"])
+    )
+    
+    tsneDf = pd.DataFrame(
+        data=tsne_results, columns=["tsne component 1", "tsne component 2"]
+    )
+
+    finalDf = pd.concat(
+        [tsneDf, merged_big_data_cpu[["cpufailures"]]], axis=1
+    )
+
+    plt.figure(figsize=(8, 6))
+    sns.scatterplot(
+        x="tsne component 1",
+        y="tsne component 2",
+        hue="cpufailures",
+        data=finalDf,
+        s=100,
+        alpha=0.75,
+    )
+
+    plt.savefig(f"{big_analysis_path}dim_red/tsne_cpu.png")
+    plt.savefig(f"{big_analysis_path}dim_red/tsne_cpu.svg")
+
+    """
+
+    """
+    # AI
 
     # Train and Evaluate with all features - CPU
     metrics, _ = train_and_evaluate(
@@ -912,308 +1170,276 @@ def big_merged_data_eda():
     #   median	0.8801    0.2457    0.2500    0.2353    		0.8794    0.1299    0.0042    0.0082    
     #   std	    0.0014    0.0180    0.0003    0.0006    		0.0015    0.0316    0.0011    0.0022    
         
-
-
-    # Train and Evaluate with all features
-    metrics, _ = train_and_evaluate(merged_big_data, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
-    # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data, 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
-
-    print(f'''\t{'METRICS ALL FEATURES':<48}\t{'METRICS ALL FEATURES (binary)':<48}
-        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
-        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
-        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
-        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        ''')
-    
-
-    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
-    # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
-
-    print(f'''\t{'METRICS WITHOUT HOST_LTYPE':<48}\t{'METRICS WITHOUT HOST_LTYPE (binary)':<48}
-        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
-        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
-        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
-        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        ''')
-    
-
-    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE AND IPSCAP
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
-    # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
-
-    print(f'''\t{'METRICS WITHOUT HOST_LTYPE AND IPSCAP':<48}\t{'METRICS WITHOUT HOST_LTYPE AND IPSCAP (binary)':<48}
-        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
-        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
-        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
-        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        ''')
-    
-
-    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
-    # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
-
-    print(f'''\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS':<48}\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (binary)':<48}
-        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
-        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
-        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
-        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        ''')
-
-
-    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS BUT WITH SVM
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', SVC(), binary=False)
-    # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips']), 'cpufailures', SVC(), binary=True)
-
-    print(f'''{'METRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM)':<56}\tMETRICS WITHOUT HOST_LTYPE, IPSCAP AND BASEIPS (SVM) (binary)
-        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
-        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
-        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
-        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        ''')
-    
-
-
-    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
-    # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=True)
-
-    print(f'''\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE':<48}\t{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (binary)':<48}
-        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
-        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
-        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
-        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        ''')
-    
-
-    # TRAIN AND EVALUATE WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE BUT WITH SVM
-    metrics, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', SVC(), binary=False)
-    # binary classification
-    metrics_bin, _ = train_and_evaluate(merged_big_data.drop(columns=['host_ltype', 'ipscap', 'baseips', 'ipsavailable']), 'cpufailures', SVC(), binary=True)
-
-    print(f'''{'METRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (SVM)':<56}\tMETRICS WITHOUT HOST_LTYPE, IPSCAP, BASEIPS AND IPSAVAILABLE (SVM) (binary)
-        \t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}\t\t{'accuracy':<10}{'precision':<10}{'recall':<10}{'f1':<10}
-        mean\t{np.mean(metrics[0]):<10.4f}{np.mean(metrics[1]):<10.4f}{np.mean(metrics[2]):<10.4f}{np.mean(metrics[3]):<10.4f}\t\t{np.mean(metrics_bin[0]):<10.4f}{np.mean(metrics_bin[1]):<10.4f}{np.mean(metrics_bin[2]):<10.4f}{np.mean(metrics_bin[3]):<10.4f}
-        median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
-        std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
-        ''')
-
     """
 
-    # Train and Evaluate without host_ltype, ipscap, baseips and numcontainers
-    # It was tested but the results were a lot worse
-
-    # plot metrics
-    # plot_metrics(metrics, 'big_merged_data_all_features')
-
-    # Train and Evaluate with only the features that have a correlation with cpufailures
-    # metrics, _ = train_and_evaluate(merged_big_data[['cpu','apparentips', 'cpufailures']], 'cpufailures', RandomForestClassifier(n_estimators=100, n_jobs=-1), binary=False)
-
-    # plot metrics
-    # plot_metrics(metrics, 'big_merged_data_correlated_features')
-
-    # """
-
-    # Remove ltype and ips cap?
-    # normalize data?
-    # remove outliers? is there any?
     
-    
-    # CPU SVM with grid search
-    params = {
-        'C': [0.1, 1, 10, 100, 1000],
-        'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-        'kernel': ['rbf', 'linear', 'poly', 'sigmoid']
+    # CPU Random Forest Classifier with grid search
+    # Use f1 as scoring metric
+
+    param_grid = {
+        "n_estimators": [50, 100, 200, 500],                  # default 100
+        "criterion": ["gini", "entropy", "log_loss"],               # default "gini"
+        "min_samples_split": [2, 5, 10],                            # default 2
+        "min_samples_leaf": [1, 2, 5],                              # default 1
+        "max_features": [None, "sqrt", "log2"],                     # default "sqrt"
+        "bootstrap": [True, False],                                 # default True
+        "n_jobs": [-1],
     }
+
+    # Train and Evaluate with all features - CPU
+
+    #metrics, _ = train_and_evaluate(
+    #    merged_big_data_cpu,
+    #    "cpufailures",
+    #    RandomForestClassifier(),
+    #    binary=False,
+    #    grid_search=True,
+    #    param_grid=param_grid,
+    #)
     
-    # Train and Evaluate with all features
-    print('CPU')
-    print('all features')
-    train_and_evaluate(merged_big_data_cpu, 'cpufailures', SVC(), binary=False, grid_search=True, param_grid=params)
+    """
+    #   Grid search time: 35103.148278713226
+    #   {'bootstrap': True, 'criterion': 'entropy', 'max_features': None, 'min_samples_leaf': 5, 'min_samples_split': 10, 'n_estimators': 500, 'n_jobs': -1}
+    #   RandomForestClassifier(criterion='entropy', max_features=None,
+    #                          min_samples_leaf=5, min_samples_split=10,
+    #                          n_estimators=500, n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.97      0.99      0.98     55433
+    #              1       0.86      0.67      0.75      5901
+    #              2       0.85      0.76      0.80      1392
+    #              3       0.88      0.43      0.58       141
+    #   
+    #       accuracy                           0.96     62867
+    #      macro avg       0.89      0.71      0.78     62867
+    #   weighted avg       0.95      0.96      0.95     62867
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.96      0.99      0.97     23740
+    #              1       0.73      0.58      0.64      2545
+    #              2       0.68      0.59      0.63       598
+    #              3       0.71      0.28      0.40        61
+    #   
+    #       accuracy                           0.94     26944
+    #      macro avg       0.77      0.61      0.66     26944
+    #   weighted avg       0.93      0.94      0.93     26944
+    
+    #   Grid search f1
+    #   {'bootstrap': True, 'criterion': 'entropy', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 10, 'n_estimators': 200, 'n_jobs': -1}
+    #   RandomForestClassifier(criterion='entropy', max_features=None,
+    #                          min_samples_split=10, n_estimators=200, n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.98      1.00      0.99     55433
+    #              1       0.91      0.76      0.83      5901
+    #              2       0.90      0.82      0.86      1392
+    #              3       0.89      0.63      0.74       141
+    #   
+    #       accuracy                           0.97     62867
+    #      macro avg       0.92      0.80      0.85     62867
+    #   weighted avg       0.97      0.97      0.97     62867
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.96      0.98      0.97     23740
+    #              1       0.71      0.58      0.64      2545
+    #              2       0.69      0.59      0.64       598
+    #              3       0.74      0.46      0.57        61
+    #   
+    #       accuracy                           0.94     26944
+    #      macro avg       0.78      0.65      0.70     26944
+    #   weighted avg       0.93      0.94      0.93     26944
+    """
+
     # binary classification
-    print('binary classification')
-    train_and_evaluate(merged_big_data_cpu, 'cpufailures', SVC(), binary=True, grid_search=True, param_grid=params)
+    #metrics_bin, _ = train_and_evaluate(
+    #    merged_big_data_cpu,
+    #    "cpufailures",
+    #    RandomForestClassifier(),
+    #    binary=True,
+    #    grid_search=True,
+    #    param_grid=param_grid,
+    #)
+
+    #   Grid search time: 5368.719045162201
+    #   {'criterion': 'gini', 'max_features': 'sqrt', 'min_samples_leaf': 5, 'min_samples_split': 10, 'n_estimators': 100, 'n_jobs': -1}
+    #   RandomForestClassifier(min_samples_leaf=5, min_samples_split=10, n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.97      0.99      0.98     55401
+    #              1       0.93      0.74      0.82      7466
+    #   
+    #       accuracy                           0.96     62867
+    #      macro avg       0.95      0.87      0.90     62867
+    #   weighted avg       0.96      0.96      0.96     62867
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.96      0.99      0.97     23772
+    #              1       0.87      0.67      0.76      3172
+    #   
+    #       accuracy                           0.95     26944
+    #      macro avg       0.91      0.83      0.86     26944
+    #   weighted avg       0.95      0.95      0.95     26944
+
+    #   Grid search f1 : 5386.9168066978455
+    #   {'criterion': 'log_loss', 'max_features': None, 'min_samples_leaf': 5, 'min_samples_split': 5, 'n_estimators': 500, 'n_jobs': -1}
+    #   RandomForestClassifier(criterion='log_loss', max_features=None,
+    #                          min_samples_leaf=5, min_samples_split=5,
+    #                          n_estimators=500, n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.97      0.99      0.98     55401
+    #              1       0.93      0.76      0.84      7466
+    #   
+    #       accuracy                           0.96     62867
+    #      macro avg       0.95      0.88      0.91     62867
+    #   weighted avg       0.96      0.96      0.96     62867
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.96      0.98      0.97     23772
+    #              1       0.86      0.69      0.77      3172
+    #   
+    #       accuracy                           0.95     26944
+    #      macro avg       0.91      0.84      0.87     26944
+    #   weighted avg       0.95      0.95      0.95     26944
 
 
-    # RAM
-    print('RAM')
-    # Train and Evaluate with all features
-    print('all features')
-    train_and_evaluate(merged_big_data_ram, 'ramfailures', SVC(), binary=False, grid_search=True, param_grid=params)
+    # RAAAAAAAAAAM
+
+    # Train and Evaluate with all features - RAM
+    metrics_bin, _ = train_and_evaluate(
+        merged_big_data_ram,
+        "ramfailures",
+        RandomForestClassifier(),
+        binary=False,
+        grid_search=True,
+        param_grid=param_grid,
+    )
+
+    #   Grid search time: 53953.81897568703
+    #   {'bootstrap': True, 'criterion': 'log_loss', 'max_features': 'sqrt', 'min_samples_leaf': 2, 'min_samples_split': 10, 'n_estimators': 200, 'n_jobs': -1}
+    #   RandomForestClassifier(criterion='log_loss', min_samples_leaf=2,
+    #                          min_samples_split=10, n_estimators=200, n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.88      1.00      0.94     55419
+    #              1       1.00      0.04      0.07      5923
+    #              2       0.00      0.00      0.00      1393
+    #              3       0.00      0.00      0.00       136
+    #   
+    #       accuracy                           0.88     62871
+    #      macro avg       0.47      0.26      0.25     62871
+    #   weighted avg       0.87      0.88      0.83     62871
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.88      1.00      0.94     23757
+    #              1       0.00      0.00      0.00      2533
+    #              2       0.00      0.00      0.00       609
+    #              3       0.00      0.00      0.00        46
+    #   
+    #       accuracy                           0.88     26945
+    #      macro avg       0.22      0.25      0.23     26945
+    #   weighted avg       0.78      0.88      0.83     26945
+
+    #   Grid search f1 : 53972.76392650604
+    #   {'bootstrap': False, 'criterion': 'entropy', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 100, 'n_jobs': -1}
+    #   RandomForestClassifier(bootstrap=False, criterion='entropy', max_features=None,
+    #                          n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       1.00      1.00      1.00     55419
+    #              1       1.00      1.00      1.00      5923
+    #              2       1.00      1.00      1.00      1393
+    #              3       1.00      1.00      1.00       136
+    #   
+    #       accuracy                           1.00     62871
+    #      macro avg       1.00      1.00      1.00     62871
+    #   weighted avg       1.00      1.00      1.00     62871
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.88      0.88      0.88     23757
+    #              1       0.11      0.11      0.11      2533
+    #              2       0.02      0.02      0.02       609
+    #              3       0.02      0.02      0.02        46
+    #   
+    #       accuracy                           0.78     26945
+    #      macro avg       0.26      0.26      0.26     26945
+    #   weighted avg       0.79      0.78      0.79     26945
+
     # binary classification
-    print('binary classification')
-    train_and_evaluate(merged_big_data_ram, 'ramfailures', SVC(), binary=True, grid_search=True, param_grid=params)
-    
-    exit()
-    """
-    # plot every feature against cpufailures
-    for feature in merged_big_data.columns:
-        if feature != 'cpufailures':
-            # 2 subplots:
-                # 1. scatter plot
-                # 2. box plot
-
-            plt.figure()
-            fig, ax = plt.subplots(1,2, figsize=(10, 5), tight_layout=True)
-
-
-            # 1. scatter plot
-            sns.scatterplot(x='cpufailures', y=feature, data=merged_big_data, ax=ax[0])
-
-            # 2. box plot
-            sns.boxplot(x='cpufailures', y=feature, data=merged_big_data, ax=ax[1])
-
-            plt.savefig(f'{big_analysis_path}pairs/{feature}_vs_numfailures.png')
-            plt.savefig(f'{big_analysis_path}pairs/{feature}_vs_numfailures.svg')
-    
-    # Pairplot
-    plt.figure()
-    sns.pairplot(merged_big_data, hue='cpufailures')
-    plt.savefig(f'{big_analysis_path}pairs/pairplot.png')
-    plt.savefig(f'{big_analysis_path}pairs/pairplot.svg')
-
-    """
-
-    # select k best features
-    # https://www.simplilearn.com/tutorials/machine-learning-tutorial/feature-selection-in-machine-learning
-    # the aforementioned tutorial mentions that, for numerical input and categorical output, we should use ANOVA Correlation Coefficient (linear) or Kendall's rank coefficient (non-linear)
-
-    print("\n---- SELECT K BEST FEATURES - RAM ----")
-
-    print("\n\t-- ANOVA --")
-
-    best_features = SelectKBest(score_func=f_classif, k="all")
-
-    fit = best_features.fit(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]),
-        merged_big_data["ramfailures"],
+    metrics_bin, _ = train_and_evaluate(
+        merged_big_data_ram,
+        "ramfailures",
+        RandomForestClassifier(),
+        binary=True,
+        grid_search=True,
+        param_grid=param_grid,
     )
 
-    dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]).columns
-    )
+    #   Grid search time: 56693.08396792412
+    #   {'bootstrap': True, 'criterion': 'entropy', 'max_features': 'sqrt', 'min_samples_leaf': 5, 'min_samples_split': 2, 'n_estimators': 200, 'n_jobs': -1}
+    #   RandomForestClassifier(criterion='entropy', min_samples_leaf=5,
+    #                          n_estimators=200, n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.88      1.00      0.94     55431
+    #              1       1.00      0.01      0.01      7440
+    #   
+    #       accuracy                           0.88     62871
+    #      macro avg       0.94      0.50      0.48     62871
+    #   weighted avg       0.90      0.88      0.83     62871
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.88      1.00      0.94     23745
+    #              1       0.00      0.00      0.00      3200
+    #   
+    #       accuracy                           0.88     26945
+    #      macro avg       0.44      0.50      0.47     26945
+    #   weighted avg       0.78      0.88      0.83     26945
 
-    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
-    featureScores.columns = ["Specs", "Score"]
-
-    print(featureScores.sort_values(by="Score", ascending=False))
-
-    print("\n\t-- CHI2 --")
-
-    best_features = SelectKBest(score_func=chi2, k="all")
-
-    fit = best_features.fit(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]),
-        merged_big_data["ramfailures"],
-    )
-
-    dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]).columns
-    )
-
-    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
-    featureScores.columns = ["Specs", "Score"]
-
-    print(featureScores.sort_values(by="Score", ascending=False))
-
-    # feature importance
-    print("\n---- FEATURE IMPORTANCE ----")
-
-    model = ExtraTreesClassifier()
-    model.fit(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]),
-        merged_big_data["ramfailures"],
-    )
-
-    print(model.feature_importances_)
-
-    feat_importances = pd.Series(
-        model.feature_importances_,
-        index=merged_big_data.drop(columns=["cpufailures", "ramfailures"]).columns,
-    )
-    print(feat_importances.sort_values(ascending=False))
-
-    print("\n---- SELECT K BEST FEATURES - CPU ----")
-
-    print("\n\t-- ANOVA --")
-
-    best_features = SelectKBest(score_func=f_classif, k="all")
-
-    fit = best_features.fit(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]),
-        merged_big_data["ramfailures"],
-    )
-
-    dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]).columns
-    )
-
-    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
-    featureScores.columns = ["Specs", "Score"]
-
-    print(featureScores.sort_values(by="Score", ascending=False))
-
-    """
-    print('\n\t-- KENDALL --')
-
-    best_features = SelectKBest(score_func=kendalltau, k='all')
-
-    fit = best_features.fit(merged_big_data.drop(columns=['cpufailures', 'ramfailures']), merged_big_data['ramfailures'])
-
-    dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(merged_big_data.drop(columns=['cpufailures', 'ramfailures']).columns)
-
-    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
-    featureScores.columns = ['Specs', 'Score']
-
-    print(featureScores.sort_values(by='Score', ascending=False))
-    """
-
-    print("\n\t-- CHI2 --")
-
-    best_features = SelectKBest(score_func=chi2, k="all")
-
-    fit = best_features.fit(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]),
-        merged_big_data["ramfailures"],
-    )
-
-    dfscores = pd.DataFrame(fit.scores_)
-    dfcolumns = pd.DataFrame(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]).columns
-    )
-
-    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
-    featureScores.columns = ["Specs", "Score"]
-
-    print(featureScores.sort_values(by="Score", ascending=False))
-
-    # feature importance
-    print("\n---- FEATURE IMPORTANCE ----")
-
-    model = ExtraTreesClassifier()
-    model.fit(
-        merged_big_data.drop(columns=["cpufailures", "ramfailures"]),
-        merged_big_data["ramfailures"],
-    )
-
-    print(model.feature_importances_)
-
-    feat_importances = pd.Series(
-        model.feature_importances_,
-        index=merged_big_data.drop(columns=["cpufailures", "ramfailures"]).columns,
-    )
-    print(feat_importances.sort_values(ascending=False))
+    #   Grid search f1 : 56717.54580140114
+    #   {'bootstrap': False, 'criterion': 'log_loss', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 50, 'n_jobs': -1}
+    #   RandomForestClassifier(bootstrap=False, criterion='log_loss', max_features=None,
+    #                          n_estimators=50, n_jobs=-1)
+    #   Train data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       1.00      1.00      1.00     55431
+    #              1       1.00      1.00      1.00      7440
+    #   
+    #       accuracy                           1.00     62871
+    #      macro avg       1.00      1.00      1.00     62871
+    #   weighted avg       1.00      1.00      1.00     62871
+    #   
+    #   Test data
+    #                 precision    recall  f1-score   support
+    #   
+    #              0       0.88      0.88      0.88     23745
+    #              1       0.12      0.13      0.12      3200
+    #   
+    #       accuracy                           0.79     26945
+    #      macro avg       0.50      0.50      0.50     26945
+    #   weighted avg       0.79      0.79      0.79     26945
 
 
 def test():
@@ -1280,6 +1506,11 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False, grid_se
         Test data to evaluate the model, by default None
     binary : bool, optional
         If True, the data will be converted to binary, by default False
+    grid_search : bool, optional
+        If True, the model will be trained using grid search, by default False
+    param_grid : dict, optional
+        Dictionary with the parameters to use in grid search, by default None
+        When grid_search is True, param_grid must be provided
 
     Returns
     -------
@@ -1310,18 +1541,61 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False, grid_se
         x_test = test.drop(columns=[y_col])
         y_test = test[y_col]
 
-        grid = GridSearchCV(model, param_grid, refit=True, verbose=3, n_jobs=-1)
+        ## NORMAL GRID SEARCH
+
+        t = time.time()
+
+        grid = GridSearchCV(model, param_grid, verbose=2, n_jobs=-1)
 
         grid.fit(x_train, y_train)
+
+        print(f"Grid search time: {time.time() - t}")
 
         print(grid.best_params_)
         print(grid.best_estimator_)
 
+        # evaluate train data and test data
+
+        print("Train data")
+        y_pred = grid.predict(x_train)
+
+        print(classification_report(y_train, y_pred))
+
+        print("Test data")
+
         y_pred = grid.predict(x_test)
 
         print(classification_report(y_test, y_pred))
+
+        ## GRID SEARCH WITH F1 SCORING
+
+        t = time.time()
+
+        grid = GridSearchCV(model, param_grid, verbose=2, n_jobs=-1, scoring=make_scorer(f1_score , average="binary" if binary else "macro"))
+
+        grid.fit(x_train, y_train)
+
+        print(f"Grid search f1 : {time.time() - t}")
+
+        print(grid.best_params_)
+        print(grid.best_estimator_)
+
+        # evaluate train data and test data
+
+        print("Train data")
+        y_pred = grid.predict(x_train)
+
+        print(classification_report(y_train, y_pred))
+
+        print("Test data")
+
+        y_pred = grid.predict(x_test)
+
+        print(classification_report(y_test, y_pred))
+
+
         
-        return
+        return None, None
 
         
 
@@ -1389,35 +1663,6 @@ def plot_metrics(metrics, name):
     plt.savefig(f"{FIGURES_PATH}metrics/{name}.svg")
 
 
-def multiprocessing_test():
-    """
-    for i in range(NUMBER_OF_SIMULATIONS):
-        print(f'starting -> {i}')
-        # do some hard work
-        a = 0
-        for j in range(NUM_SIM_STEPS*10):
-            # do some calculations
-            for _ in range(j, NUM_SIM_STEPS*10):
-                a += 1
-        print(f'finished -> {i}, result: {a}')
-    """
-
-    # same as above but using multiprocessing
-    with Pool(processes=NUMBER_OF_SIMULATIONS) as pool:
-        pool.map(multiprocessing_test_aux, range(NUMBER_OF_SIMULATIONS))
-
-
-def multiprocessing_test_aux(i):
-    print(f"starting -> {i}")
-    # do some hard work
-    a = 0
-    for j in range(NUM_SIM_STEPS * 10):
-        # do some calculations
-        for _ in range(j, NUM_SIM_STEPS * 10):
-            a += 1
-    print(f"finished -> {i}, result: {a}")
-
-
 if __name__ == "__main__":
     time_start = time.time()
 
@@ -1432,7 +1677,5 @@ if __name__ == "__main__":
     big_merged_data_eda()
 
     # test()
-
-    # multiprocessing_test()
 
     print(f"Time taken: {time.time() - time_start}")
