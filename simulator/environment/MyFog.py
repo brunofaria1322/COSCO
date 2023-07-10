@@ -57,9 +57,13 @@ class MyFog():
 				}
  		}
 
+
+	"""
 	def generateHosts(self):
+		# Linear SFC - old - no pointers to parent or replica
 		hosts = []
 		keys = ['B2s', 'B4ms', 'B8ms']
+		# first half is normal, second half is replica
 		for i in range(self.num_hosts):
 			typeID = i%3
 			key = keys[i%3]
@@ -70,4 +74,25 @@ class MyFog():
 			#Power = eval(self.types[key]['Power']+'()')
 			Latency = self.types[key]['Latency']
 			hosts.append((IPS, Ram, Disk_, Bw, Latency, typeID))
+		return hosts
+	"""
+	
+	
+	def generateHosts(self):
+		# Linear SFC 
+		hosts = []
+		keys = ['B2s', 'B4ms', 'B8ms']
+		# first half is normal, second half is replica
+		for i in range(self.num_hosts):
+			typeID = i%3
+			parent = (i+1)%3 if (i+1)%3 != 0 else None
+			replica = i+3 if i < 3 else None
+			key = keys[i%3]
+			IPS = self.types[key]['IPS']
+			Ram = RAM(self.types[key]['RAMSize'], self.types[key]['RAMRead'], self.types[key]['RAMWrite'])
+			Disk_ = Disk(self.types[key]['DiskSize'], self.types[key]['DiskRead']*5, self.types[key]['DiskWrite']*10)
+			Bw = Bandwidth(self.types[key]['BwUp'], self.types[key]['BwDown'])
+			#Power = eval(self.types[key]['Power']+'()')
+			Latency = self.types[key]['Latency']
+			hosts.append((IPS, Ram, Disk_, Bw, Latency, typeID, parent, replica))
 		return hosts

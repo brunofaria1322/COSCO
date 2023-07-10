@@ -15,6 +15,7 @@ class Simulator:
         self.scheduler.setEnvironment(self)
         self.containerlimit = ContainerLimit
         self.hostlist = []
+        self.egdehostlist = []              # list of non replica edge hosts
         self.containerlist = []
         self.failurelist = [None] * FailureLimit
         self.intervaltime = IntervalTime
@@ -23,18 +24,23 @@ class Simulator:
         self.stats = None
         self.addHostlistInit(hostinit)
 
-    def addHostInit(self, IPS, RAM, Disk, Bw, Latency, layer_type):
+    def addHostInit(self, IPS, RAM, Disk, Bw, Latency, layer_type, parentID, replicaID):
         assert len(self.hostlist) < self.hostlimit
-        host = MyHost(len(self.hostlist), IPS, RAM, Disk, Bw, Latency, self, layer_type)
+        host = MyHost(len(self.hostlist), IPS, RAM, Disk, Bw, Latency, self, layer_type, parentID, replicaID)
         self.hostlist.append(host)
+
+        # update edge host list
+        if layer_type == 0 and replicaID != None:
+            self.egdehostlist.append(host)
 
     def addHostlistInit(self, hostList):
         assert len(hostList) == self.hostlimit
-        for IPS, RAM, Disk, Bw, Latency, layer_type in hostList:
-            self.addHostInit(IPS, RAM, Disk, Bw, Latency, layer_type)
+        for IPS, RAM, Disk, Bw, Latency, layer_type, parent, replica in hostList:
+            self.addHostInit(IPS, RAM, Disk, Bw, Latency, layer_type, parent, replica)
+
 
     def addContainerInit(
-        self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel
+        self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, target_id
     ):
         container = MyContainer(
             len(self.containerlist),
@@ -45,7 +51,7 @@ class Simulator:
             RAMModel,
             DiskModel,
             self,
-            HostID=-1,
+            targetHostID=target_id,
         )
         self.containerlist.append(container)
         return container
@@ -65,16 +71,17 @@ class Simulator:
             IPSModel,
             RAMModel,
             DiskModel,
+            target_id
         ) in deployed:
             dep = self.addContainerInit(
-                CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel
+                CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, target_id
             )
             deployedContainers.append(dep)
         self.containerlist += [None] * (self.containerlimit - len(self.containerlist))
         return [container.id for container in deployedContainers]
 
     def addContainer(
-        self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel
+        self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, target_id
     ):
         for i, c in enumerate(self.containerlist):
             if c == None or not c.active:
@@ -87,7 +94,7 @@ class Simulator:
                     RAMModel,
                     DiskModel,
                     self,
-                    HostID=-1,
+                    targetHostID=target_id,
                 )
                 self.containerlist[i] = container
                 return container
@@ -107,9 +114,10 @@ class Simulator:
             IPSModel,
             RAMModel,
             DiskModel,
+            target_id
         ) in deployed:
             dep = self.addContainer(
-                CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel
+                CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, target_id
             )
             deployedContainers.append(dep)
         return [container.id for container in deployedContainers]

@@ -13,6 +13,7 @@ class MyContainer:
         DiskModel,
         Environment,
         HostID=-1,
+        targetHostID=-1,
     ):
         self.id = ID
         self.creationID = creationID
@@ -25,6 +26,7 @@ class MyContainer:
         self.diskmodel = DiskModel
         self.diskmodel.allocContainer(self)
         self.hostid = HostID
+        self.targetHostID = targetHostID
         self.env = Environment
         self.createAt = creationInterval
         self.startAt = self.env.interval
@@ -84,6 +86,7 @@ class MyContainer:
                 - self.env.hostlist[hostID].latency
             )
         self.hostid = hostID
+        #print(f'Container {self.id} allocated to host {hostID}')
         return lastMigrationTime
 
     def execute(self, lastMigrationTime):

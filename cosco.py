@@ -23,7 +23,7 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 1000
+NUM_SIM_STEPS = 10
 # HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS = 3 * 2
 
@@ -84,7 +84,8 @@ def initalizeEnvironment(prints=True):
     if prints:
         print("Executing first step...")
     newcontainerinfos = workload.generateNewContainers(
-        env.interval
+        env.interval,
+        env.egdehostlist
     )  # New containers info
     deployed = env.addContainersInit(
         newcontainerinfos
@@ -121,14 +122,19 @@ def stepSimulation(workload, scheduler, env, stats, prints=True):
     # Create new container in the next layer
     if destroyed:
         for container in destroyed:
-            cont_ltype = container.getLType()
-            if cont_ltype < 2:
+            host = env.hostlist[container.targetHostID]
+            container.getHost()
+            #print(f'{container.creationID} destroyed, creating new on Host {host.parentID}')
+            if host.parentID:
+
                 workload.generateNewContainers(
-                    env.interval, cont_ltype + 1
+                    env.interval, [env.getHostByID(host.parentID)]
                 )  # new container for the next layer
 
+    # Containers in the edge
     newcontainerinfos = workload.generateNewContainers(
-        env.interval
+        env.interval,
+        env.egdehostlist
     )  # New containers info
     if prints:
         print([(c[0], c[1]) for c in newcontainerinfos])
