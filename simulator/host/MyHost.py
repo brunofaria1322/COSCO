@@ -7,7 +7,12 @@ class MyHost():
 	# RAM = Ram in MB capacity
 	# Disk = Disk characteristics capacity
 	# Bw = Bandwidth characteristics capacity
-	def __init__(self, ID, IPS, RAM, Disk, Bw, Latency, Environment, layer_type):
+	# Latency = Latency of host
+	# Environment = Environment object
+	# layer_type = 0 = edge, 1 = fog, 2 = cloud
+	# parentID = parent host ID
+	# replicaID = replica host ID
+	def __init__(self, ID, IPS, RAM, Disk, Bw, Latency, Environment, layer_type, parentID, replicaID = None):
 		self.id = ID
 		self.ipsCap = IPS
 		self.ramCap = RAM
@@ -15,8 +20,11 @@ class MyHost():
 		self.bwCap = Bw
 		self.latency = Latency
 		self.env = Environment
-		self.layer_type = layer_type # 0 = edge, 1 = fog, 2 = cloud
-		#print(f'HOST {ID} with layer Type {layer_type}')
+		self.layer_type = layer_type 	# 0 = edge, 1 = fog, 2 = cloud
+		self.parentID = parentID 			# parentID host ID
+		self.replicaID = replicaID 		# replica host ID
+		
+		print(f'HOST {ID} with layer Type {layer_type}, parent {parentID}, replica {replicaID} created')
 		
 	def getCPU(self):
 		ips = self.getApparentIPS()
@@ -84,3 +92,6 @@ class MyHost():
 	def getDiskAvailable(self):
 		size, read, write = self.getCurrentDisk()
 		return self.diskCap.size - size, self.diskCap.read - read, self.diskCap.write - write
+
+	def __str__(self):
+		return f'Host {self.id} with layer type {self.layer_type}, parent {self.parentID}, replica {self.replicaID}'

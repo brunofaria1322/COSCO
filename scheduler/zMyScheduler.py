@@ -23,8 +23,13 @@ class MyScheduler(Scheduler):
                     ]
                     # selects the container that consumes more cpu resources (has more instructon per second (IPs))
                     selectedContainerIDs_targetHost.append(
-                        (containerIDs[np.argmax(containerIPs)], hostID + half_hosts_len)
+                        (containerIDs[np.argmax(containerIPs)], host.replicaID)
                     )
+
+                    # select the 2 containers that consume more cpu resources (has more instructon per second (IPs))
+                    #   selectedContainerIDs_targetHost.append(
+                    #       (containerIDs[np.argpartition(containerIPs, -2)[-2:]], host.replicaID)
+                    #   )
 
                     print(
                         f"HOST {hostID} has cpu usage of {host.getCPU()}: {containerIPs}\t{host.ipsCap}\t{host.getBaseIPS()}"
@@ -71,11 +76,11 @@ class MyScheduler(Scheduler):
             # decision.append((cid, leastFullHost[0]))
             # scores.remove(leastFullHost)
 
-            container_ltype = self.env.getContainerByID(cid).getLType()
+            host_id = self.env.getContainerByID(cid).targetHostID
             # print(f"Container with ID {cid} has type {container_ltype}")
 
             # Will send to the layer type
-            decisions.append((cid, container_ltype))
+            decisions.append((cid, host_id))
 
         # print(decisions)
         # print('-------------place out')
