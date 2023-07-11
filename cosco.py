@@ -6,7 +6,9 @@ from time import time
 
 # Simulator imports
 from simulator.Simulator import *
-from simulator.environment.MyFog import *
+
+# from simulator.environment.MyFog import *
+from simulator.environment.MyDynamicFog import *
 
 # from simulator.workload.MyBitbrainWorkload import *
 from simulator.workload.MyAzure2019Workload import *
@@ -23,7 +25,7 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 10
+NUM_SIM_STEPS = 1000
 # HOSTS = 10 * 5 if opts.env == '' else 10
 HOSTS = 3 * 2
 
@@ -34,10 +36,10 @@ INTERVAL_TIME = 300  # seconds
 # NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 2
 
-FAULT_RATE = 0.3
-FAULT_TIME = 6
-FAULT_INCREASE_TIME = 2
-RECOVER_TIME = 18
+FAULT_RATE = 0.0
+FAULT_TIME = 15
+FAULT_INCREASE_TIME = 5
+RECOVER_TIME = 5
 FAULTY_HOSTS = [0, 1, 2]
 FAILURE_TYPES = ["CPU", "RAM"]
 ACCUMULATIVE_FAULTS = True
