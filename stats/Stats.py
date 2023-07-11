@@ -7,7 +7,7 @@ plt.style.use(['science'])
 plt.rcParams["text.usetex"] = False
 
 class Stats():
-	def __init__(self, Environment, WorkloadModel, Datacenter, Scheduler):
+	def __init__(self, Environment, WorkloadModel, Datacenter, Scheduler, save_essential = False):
 		self.env = Environment
 		self.env.stats = self
 		self.workload = WorkloadModel
@@ -16,6 +16,7 @@ class Stats():
 		#self.simulated_scheduler = GOBIScheduler('energy_latency_'+str(self.datacenter.num_hosts))
 		#self.simulated_scheduler.env = self.env
 		self.schedule_series = np.zeros((1, len(self.env.containerlist), len(self.env.hostlist)))
+		self.save_essential = save_essential
 		self.initStats()
 
 	def initStats(self):	
@@ -128,13 +129,14 @@ class Stats():
 			schedulerinfo['migrationTime'] = self.env.intervalAllocTimings[-1]
 		self.schedulerinfo.append(schedulerinfo)
 
-	def saveStats(self, deployed, migrations, destroyed, selectedcontainers, decision, schedulingtime):	
+	def saveStats(self, deployed, migrations, destroyed, selectedcontainers, decision, schedulingtime):
 		self.saveHostInfo()
-		self.saveWorkloadInfo(deployed, migrations)
-		self.saveContainerInfo()
-		self.saveAllContainerInfo()
-		self.saveMetrics(destroyed, migrations)
-		self.saveSchedulerInfo(selectedcontainers, decision, schedulingtime)
+		if not self.save_essential:
+			self.saveWorkloadInfo(deployed, migrations)
+			self.saveContainerInfo()
+			self.saveAllContainerInfo()
+			self.saveMetrics(destroyed, migrations)
+			self.saveSchedulerInfo(selectedcontainers, decision, schedulingtime)
 
 	"""
 	def runSimpleSimulation(self, decision):

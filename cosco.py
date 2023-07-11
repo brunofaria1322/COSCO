@@ -45,7 +45,7 @@ FAILURE_TYPES = ["CPU", "RAM"]
 ACCUMULATIVE_FAULTS = True
 
 
-def initalizeEnvironment(prints=True):
+def initalizeEnvironment(prints=True, save_essential = False):
     # Initialize simple fog datacenter
     if prints:
         print("Initializing environment...")
@@ -80,7 +80,7 @@ def initalizeEnvironment(prints=True):
     # Initialize stats
     if prints:
         print("Initializing stats...")
-    stats = Stats(env, workload, datacenter, scheduler)
+    stats = Stats(env, workload, datacenter, scheduler, save_essential=save_essential)
 
     # Execute first step
     if prints:
@@ -298,20 +298,8 @@ def saveStats(stats, datacenter, workload, env, save_essential=False):
         pickle.dump(stats, handle)
 
 
-if __name__ == "__main__":
-    start = time()
-    datacenter, workload, scheduler, env, stats = initalizeEnvironment()
-
-    for step in range(NUM_SIM_STEPS):
-        print(color.BOLD + "Simulation Interval:", step, color.ENDC)
-        stepSimulation(workload, scheduler, env, stats)
-
-    saveStats(stats, datacenter, workload, env)
-    print("Total time:", time() - start)
-
-
 def runCOSCO(prints=False, save_essential=True):
-    datacenter, workload, scheduler, env, stats = initalizeEnvironment(prints)
+    datacenter, workload, scheduler, env, stats = initalizeEnvironment(prints, save_essential)
 
     for step in range(NUM_SIM_STEPS):
         if prints:
@@ -320,3 +308,10 @@ def runCOSCO(prints=False, save_essential=True):
         stepSimulation(workload, scheduler, env, stats, prints)
 
     saveStats(stats, datacenter, workload, env, save_essential=save_essential)
+
+if __name__ == "__main__":
+    start = time()
+    
+    runCOSCO(prints=False, save_essential=True)
+
+    print("Total time:", time() - start)

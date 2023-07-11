@@ -53,7 +53,7 @@ class MyFog:
         # Linear SFC
         hosts = []
         keys = list(self.types)
-        print(keys)
+        
         # first half is normal, second half is replica
         for i in range(self.num_hosts):
             typeID = i % 3

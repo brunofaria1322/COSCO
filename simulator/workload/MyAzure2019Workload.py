@@ -6,6 +6,7 @@ from simulator.container.DiskModels.DMBitbrain import *
 import random
 import math
 import numpy as np
+import pickle
 from os import path, makedirs, listdir, remove
 import wget
 from zipfile import ZipFile
@@ -101,16 +102,16 @@ class MyAzure2019Workload(Workload):
         self.disk_sizes = [1, 2, 3]
         self.meanSLA, self.sigmaSLA = 20, 3
         self.meanSLA, self.sigmaSLA = 4, 1
-        self.max_sla = round(
+        self.max_sla = np.ceil(
             self.meanSLA + 4 * self.sigmaSLA
-        )  # it cathes 99.9% of the data
+        ).astype(int)  # it cathes 99.9% of the data
 
-        self.possible_indices = [[], [], []]  # 3 types
+        self.csv_data = [[], [], []]  # 3 types [edge, fog, cloud]zz
 
-        if path.exists(possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy"):
-            self.possible_indices = np.load(
-                possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy", allow_pickle=True
-            )
+        if path.exists(f"{possible_path}{self.meanSLA}-{self.sigmaSLA}.pkl"):
+            with open(f"{possible_path}{self.meanSLA}-{self.sigmaSLA}.pkl", "rb") as f:
+                self.csv_data = pickle.load(f)
+
 
         else:
             cpus_ips = [2048, 8*2048, 20*2048]  # minimum - from MyFog
@@ -125,31 +126,58 @@ class MyAzure2019Workload(Workload):
                 df2 = pd.read_csv(az_dpath + str(i) + ".csv", header=None)
 
                 ips = (
-                    df["CPU capacity provisioned [MHZ]"].to_numpy()[: self.max_sla]
-                    * df2.to_numpy()[: self.max_sla, 0]
+                    df["CPU capacity provisioned [MHZ]"].to_numpy()
+                    * df2.to_numpy()[: , 0]
                     / 100
                 )
-                ram = df["Memory usage [KB]"].to_numpy()[: self.max_sla]
+                ram = df["Memory usage [KB]"].to_numpy()
 
-                temp_ips = ips_multiplier * np.max(ips) * 0.9
+                temp_ips = ips_multiplier * np.max(ips[:self.max_sla]) * 0.9
                 all_ips.append(temp_ips)
-                temp_ram = np.max(ram) / 4000
+                temp_ram = np.max(ram[:self.max_sla]) / 4000
 
                 if (
                     cpus_ips[0] * 0.01 < temp_ips < cpus_ips[0] / max_containers[0]
                     and temp_ram < rams[0] * 0.1
                 ):
-                    self.possible_indices[0].append(i)
+                    self.csv_data[0].append(
+                        {
+                            "ips": ips * ips_multiplier,
+                            "ram": ram / 4000,
+                            "ram_r": df["Network received throughput [KB/s]"] / 500,
+                            "ram_w": df["Network transmitted throughput [KB/s]"] / 500,
+                            "disk_r": df["Disk read throughput [KB/s]"] / 4000,
+                            "disk_w": df["Disk write throughput [KB/s]"] / 12000,
+                        }
+                    )
                 if (
                     cpus_ips[1] * 0.01 < temp_ips < cpus_ips[1] / max_containers[1]
                     and temp_ram < rams[1] * 0.1
                 ):
-                    self.possible_indices[1].append(i)
+                    self.csv_data[1].append(
+                        {
+                            "ips": ips * ips_multiplier,
+                            "ram": ram / 4000,
+                            "ram_r": df["Network received throughput [KB/s]"] / 500,
+                            "ram_w": df["Network transmitted throughput [KB/s]"] / 500,
+                            "disk_r": df["Disk read throughput [KB/s]"] / 4000,
+                            "disk_w": df["Disk write throughput [KB/s]"] / 12000,
+                        }
+                    )
                 if (
                     cpus_ips[2] * 0.01 < temp_ips < cpus_ips[2] / max_containers[2]
                     and temp_ram < rams[2] * 0.1
                 ):
-                    self.possible_indices[2].append(i)
+                    self.csv_data[2].append(
+                        {
+                            "ips": ips * ips_multiplier,
+                            "ram": ram / 4000,
+                            "ram_r": df["Network received throughput [KB/s]"] / 500,
+                            "ram_w": df["Network transmitted throughput [KB/s]"] / 500,
+                            "disk_r": df["Disk read throughput [KB/s]"] / 4000,
+                            "disk_w": df["Disk write throughput [KB/s]"] / 12000,
+                        }
+                    )
 
                 """
 						
@@ -186,15 +214,14 @@ class MyAzure2019Workload(Workload):
 				
 			"""
 
-            np.save(
-                possible_path + f"{self.meanSLA}-{self.sigmaSLA}.npy",
-                self.possible_indices,
-            )
+            # save
+            with open(f"{possible_path}{self.meanSLA}-{self.sigmaSLA}.pkl", "wb") as f:
+                pickle.dump(self.csv_data, f)
 
         print(
-            len(self.possible_indices[0]),
-            len(self.possible_indices[1]),
-            len(self.possible_indices[2]),
+            len(self.csv_data[0]),
+            len(self.csv_data[1]),
+            len(self.csv_data[2]),
         )
 
         # exit()
@@ -210,50 +237,41 @@ class MyAzure2019Workload(Workload):
         for host in hosts:
             #print(host)
 
-
-            # generates 1 container per interval
-            # for _ in range(1):
+            host_layer_type = host.layer_type
 
             # poisson arrival with mean
             for _ in range(max(1, np.random.poisson(self.num))):
                 CreationID = self.creation_id
-                # index = self.possible_indices[randint(0,len(self.possible_indices)-1)]
-                index = random.choice(self.possible_indices[host.layer_type])
-                df = pd.read_csv(
-                    self.dataset_path + "rnd/" + str(index) + ".csv", sep=";\t"
-                )
-                df2 = pd.read_csv(self.az_dpath + str(index) + ".csv", header=None)
+                
+                csv = random.choice(self.csv_data[host_layer_type])
+                
                 sla = round(random.gauss(self.meanSLA, self.sigmaSLA))
-                # TODO: ver linha a baixo
-                ips = (
-                    df["CPU capacity provisioned [MHZ]"].to_numpy()
-                    * df2.to_numpy()[:, 0]
-                    / 100
-                )
+                
+                ips_model_list = csv["ips"]
                 IPSModel = IPSMBitbrain(
-                    (ips_multiplier * ips).tolist(),
-                    max((ips_multiplier * ips).tolist()[: max(sla, self.max_sla)]),
+                    ips_model_list,
+                    max(ips_model_list[: max(sla, self.max_sla)]),
                     sla,
                     interval + sla,
                 )
                 RAMModel = RMBitbrain(
-                    (df["Memory usage [KB]"] / 4000).to_list(),
-                    (df["Network received throughput [KB/s]"] / 500).to_list(),
-                    (df["Network transmitted throughput [KB/s]"] / 500).to_list(),
+                    csv["ram"],
+                    csv["ram_r"],
+                    csv["ram_w"],
                 )
-                disk_size = self.disk_sizes[index % len(self.disk_sizes)]
+                disk_size = self.disk_sizes[host_layer_type]
                 DiskModel = DMBitbrain(
                     disk_size,
-                    (df["Disk read throughput [KB/s]"] / 4000).to_list(),
-                    (df["Disk write throughput [KB/s]"] / 12000).to_list(),
+                    csv["disk_r"],
+                    csv["disk_w"],
                 )
                 workloadlist.append(
-                    (CreationID, host.layer_type, interval, IPSModel, RAMModel, DiskModel, host.id)
+                    (CreationID, host_layer_type, interval, IPSModel, RAMModel, DiskModel, host.id)
                 )
                 self.creation_id += 1
 
                 # if layer_type != 0 we want to leave the loop, because we only want to generate 1 container
-                if host.layer_type != 0:
+                if host_layer_type != 0:
                     break
 
         self.createdContainers += workloadlist
@@ -282,26 +300,23 @@ class MyAzure2019Workload(Workload):
         # 				2 - cloud
         #
 
+        
+        host_layer_type = host.layer_type
+
         failurelist = []
         for _ in range(2):
             CreationID = self.creationFailure_id
-            index = random.choice(self.possible_indices[host.layer_type])
-            df = pd.read_csv(
-                self.dataset_path + "rnd/" + str(index) + ".csv", sep=";\t"
-            )
-            df2 = pd.read_csv(self.az_dpath + str(index) + ".csv", header=None)
+            csv = random.choice(self.csv_data[host_layer_type])
+            
             sla = max_duration
             zeros = [0] * max_duration
 
-            ips = (
-                df["CPU capacity provisioned [MHZ]"].to_numpy()
-                * df2.to_numpy()[:, 0]
-                / 100
-            )
+            ips_model_list = csv["ips"]
+
             if "CPU" in failure_type:
                 IPSModel = IPSMBitbrain(
-                    (ips_multiplier * ips).tolist(),
-                    max((ips_multiplier * ips).tolist()[:max_duration]),
+                    ips_model_list,
+                    max(ips_model_list[:max_duration]),
                     sla,
                     interval + sla,
                 )
@@ -310,17 +325,17 @@ class MyAzure2019Workload(Workload):
 
             if "RAM" in failure_type:
                 RAMModel = RMBitbrain(
-                    (df["Memory usage [KB]"] / 4000).to_list(),
-                    (df["Network received throughput [KB/s]"] / 500).to_list(),
-                    (df["Network transmitted throughput [KB/s]"] / 500).to_list(),
+                    csv["ram"],
+                    csv["ram_r"],
+                    csv["ram_w"],
                 )
             else:
                 RAMModel = RMBitbrain(zeros, zeros, zeros)
 
-            disk_size = self.disk_sizes[index % len(self.disk_sizes)]
+            disk_size = self.disk_sizes[host_layer_type]
             DiskModel = DMBitbrain(disk_size, zeros, zeros)
             failurelist.append(
-                (CreationID, host.layer_type, interval, IPSModel, RAMModel, DiskModel)
+                (CreationID, host_layer_type, interval, IPSModel, RAMModel, DiskModel)
             )
             self.creationFailure_id += 1
 
