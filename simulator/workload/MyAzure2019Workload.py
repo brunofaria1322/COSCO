@@ -113,8 +113,8 @@ class MyAzure2019Workload(Workload):
             )
 
         else:
-            cpus_ips = [4029, 8102, 16111]  # from MyFog
-            rams = [4295, 17180, 34360]  # from MyFog
+            cpus_ips = [2048, 8*2048, 20*2048]  # minimum - from MyFog
+            rams = [2*1024, 32*1024, 80*1024]   # minimum - from MyFog
             max_containers = [20, 30, 50]  # manually
 
             all_ips = []
