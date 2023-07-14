@@ -8,7 +8,8 @@ from time import time
 from simulator.Simulator import *
 
 # from simulator.environment.MyFog import *
-from simulator.environment.MyDynamicFog import *
+# from simulator.environment.MyVariableFog import *
+from simulator.environment.MyTreeFog import *
 
 # from simulator.workload.MyBitbrainWorkload import *
 from simulator.workload.MyAzure2019Workload import *
@@ -27,7 +28,7 @@ usage = "usage: python main.py"
 # Global constants
 NUM_SIM_STEPS = 1000
 # HOSTS = 10 * 5 if opts.env == '' else 10
-HOSTS = 3 * 2
+HOSTS = 7 * 2
 
 CONTAINERS = HOSTS * 10
 FAILURES = HOSTS * 10
