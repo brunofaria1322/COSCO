@@ -8,8 +8,12 @@ from time import time
 from simulator.Simulator import *
 
 # from simulator.environment.MyFog import *
+<<<<<<< HEAD
 # from simulator.environment.MyVariableFog import *
 from simulator.environment.MyTreeFog import *
+=======
+from simulator.environment.MyDynamicFog import *
+>>>>>>> 7c48b65f67a9128592350707d92c033eac093a70
 
 # from simulator.workload.MyBitbrainWorkload import *
 from simulator.workload.MyAzure2019Workload import *
