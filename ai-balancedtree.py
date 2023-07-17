@@ -57,13 +57,15 @@ hosts_str = "".join([str(i) for i in FAULTY_HOSTS])
 type_str = "acc" if ACCUMULATIVE_FAULTS else "rec"
 fault_type_str = "".join([str(i[0]).lower() for i in FAILURE_TYPES])
 
-DATAPATH = f"AI/backups/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_TIME}rt_{FAULT_INCREASE_TIME}fit_hosts{hosts_str}_{type_str}_{fault_type_str}/"
+DATAPATH = f"AI/balanced_tree/{NUM_SIM_STEPS}i_{FAULT_RATE}fr_{FAULT_TIME}ft_{RECOVER_TIME}rt_{FAULT_INCREASE_TIME}fit_hosts{hosts_str}_{type_str}_{fault_type_str}/"
 FIGURES_PATH = f"{DATAPATH}/figures/"
 CSV_PATH = f"logs/MyFog_MyAzure2019Workload_{NUM_SIM_STEPS}_{HOSTS}_{CONTAINERS}_{ROUTER_BW}_{INTERVAL_TIME}_{NEW_CONTAINERS}/hostinfo_with_interval.csv"
 
 NUMBER_OF_SIMULATIONS = 30
 
 NUMBER_OF_REPETITIONS = 50
+
+SAVE_SVG = False
 
 
 def generate_datasets():
@@ -243,7 +245,8 @@ def evaluate_datasets(failure="cpu"):
     plt.hist(metrics_12_3[3], bins=10, alpha=0.5)
     plt.legend(["Host1", "All hosts", "Host1 and Host2"])
     plt.savefig(f"{metrics_path}/f1_scores.png")
-    plt.savefig(f"{metrics_path}/f1_scores.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{metrics_path}/f1_scores.svg")
 
     # plots for host1
     plot_metrics(metrics_1, "metrics_1")
@@ -285,7 +288,8 @@ def evaluate_datasets(failure="cpu"):
     )
 
     plt.savefig(f"{metrics_path}/cpu_12_3.png")
-    plt.savefig(f"{metrics_path}/cpu_12_3.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{metrics_path}/cpu_12_3.svg")
 
 
 def train_and_evaluate_big_data():
@@ -350,7 +354,8 @@ def train_and_evaluate_big_data():
     plt.boxplot(metrics)
     plt.xticks([1, 2, 3, 4], ["Accuracy", "Precision", "Recall", "F1"])
     plt.savefig(f"{FIGURES_PATH}/metrics_big_data.png")
-    plt.savefig(f"{FIGURES_PATH}/metrics_big_data.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{FIGURES_PATH}/metrics_big_data.svg")
 
     # train in all data
     merged_big_data = pd.DataFrame()
@@ -413,7 +418,7 @@ def plot_distribution(data, dataset_index):
             count.append(0)
 
     plt.figure()
-    fig, ax = plt.subplots(figsize=(10, 5), tight_layout=True)
+    fig, ax = plt.subplots(figsize=(15, 5), tight_layout=True)
 
     x = np.arange(num_max_labels)
     x_labels = [str(label) for label in range(num_max_labels)]
@@ -477,29 +482,38 @@ def plot_distribution(data, dataset_index):
     ax.bar(1, 0, color="gray", label="CPU")
     ax.bar(1, 0, color="gray", hatch="///", label="RAM")
 
-    ax.legend(loc="upper right")
+    ax.legend(loc="best")
 
     plt.savefig(
         f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/png/failure_distribution.png"
     )
-    plt.savefig(
-        f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/svg/failure_distribution.svg"
-    )
+    if SAVE_SVG:
+        plt.savefig(
+            f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/svg/failure_distribution.svg"
+        )
 
 
 def plot_cpu_ram(data, dataset_index):
-    num_hosts = int(len(data)/2)
+    num_hosts = len(data)
     individual_data_path = f"{FIGURES_PATH}analysis/individuals/data{dataset_index}/"
 
     def plot_usage_and_failures(component):
         component_failures = f"{component}failures"
-        
+
         fig_hos, ax_hos = plt.subplots(
-            nrows=num_hosts, ncols=1, sharex=True, sharey=True, figsize=(10, 10)
+            nrows=num_hosts // 2,
+            ncols=1,
+            sharex=True,
+            sharey=True,
+            figsize=(10, num_hosts),
         )
 
         fig_all, ax_all = plt.subplots(
-            nrows=num_hosts * 2, ncols=1, sharex=True, sharey=True, figsize=(10, 15)
+            nrows=num_hosts,
+            ncols=1,
+            sharex=True,
+            sharey=True,
+            figsize=(10, 2 * num_hosts),
         )
 
         # each row represents a different host
@@ -510,9 +524,9 @@ def plot_cpu_ram(data, dataset_index):
         most_failures = 0
         most_failures_index = 0
 
-        scs_hos = [None for _ in range(num_hosts)]
+        scs_hos = [None for _ in range(num_hosts // 2)]
 
-        for h_i in range(num_hosts * 2):
+        for h_i in range(num_hosts):
             # print(f'Host {h_i}')
             # print(f'{component.upper()}: {data[h_i][component]}')
             # print(f'{component.upper()} Failures: {data[h_i][component_failures]}')
@@ -526,7 +540,7 @@ def plot_cpu_ram(data, dataset_index):
                 label=f"{component.upper()} Usage",
             )
 
-            if h_i < num_hosts:
+            if h_i in FAULTY_HOSTS:
                 # component failures
                 sc = ax_ind.scatter(
                     data[h_i]["interval"],
@@ -547,20 +561,25 @@ def plot_cpu_ram(data, dataset_index):
             ax_ind.set_xlim([0, len(data[h_i]["interval"])])
             # ax_ind.set_ylim([0, 100])
 
-            fig_ind.legend(*ax_ind.get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72))
+            fig_ind.legend(
+                *ax_ind.get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72)
+            )
 
             fig_ind.tight_layout()
             fig_ind.savefig(f"{individual_data_path}png/indiv/{component}_{h_i}.png")
-            fig_ind.savefig(f"{individual_data_path}svg/indiv/{component}_{h_i}.svg")
+            if SAVE_SVG:
+                fig_ind.savefig(
+                    f"{individual_data_path}svg/indiv/{component}_{h_i}.svg"
+                )
 
             ### HOST PLOTS ###
-            if h_i < num_hosts:
+            if h_i in FAULTY_HOSTS:
                 if max(data[h_i][component_failures]) > most_failures:
                     most_failures = max(data[h_i][component_failures])
                     most_failures_index = h_i
 
                 # component usage
-                ax_hos[h_i].plot(
+                ax_hos[h_i // 2].plot(
                     data[h_i]["interval"],
                     data[h_i][component],
                     color="black",
@@ -568,16 +587,16 @@ def plot_cpu_ram(data, dataset_index):
                 )
 
                 # component failures
-                scs_hos[h_i] = ax_hos[h_i].scatter(
+                scs_hos[h_i // 2] = ax_hos[h_i // 2].scatter(
                     data[h_i]["interval"],
                     data[h_i][component],
                     c=data[h_i][component_failures],
                     cmap="magma_r",
                 )
 
-                #ax_hos[h_i].set_ylim([0, 100])
-                ax_hos[h_i].set_xlim([0, len(data[h_i]["interval"])])
-                ax_hos[h_i].set_title(f"Host {h_i}")
+                # ax_hos[h_i//2].set_ylim([0, 100])
+                ax_hos[h_i // 2].set_xlim([0, len(data[h_i]["interval"])])
+                ax_hos[h_i // 2].set_title(f"Host {h_i}")
 
             ### ALL PLOTS (with replicas) ###
             # component usage
@@ -588,8 +607,7 @@ def plot_cpu_ram(data, dataset_index):
                 label=f"{component.upper()} Usage",
             )
 
-            if h_i < num_hosts:
-
+            if h_i in FAULTY_HOSTS:
                 # component failures
                 ax_all[h_i].scatter(
                     data[h_i]["interval"],
@@ -598,7 +616,7 @@ def plot_cpu_ram(data, dataset_index):
                     cmap="magma_r",
                 )
 
-            #ax_all[h_i].set_ylim([0, 100])
+            # ax_all[h_i].set_ylim([0, 100])
             ax_all[h_i].set_xlim([0, len(data[h_i]["interval"])])
 
         # HOST PLOTS
@@ -606,8 +624,9 @@ def plot_cpu_ram(data, dataset_index):
         fig_hos.supylabel(f"{component.upper()} Usage (%)")
         fig_hos.supxlabel("Interval")
 
-
-        fig_hos.legend(*ax_hos[0].get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72))
+        fig_hos.legend(
+            *ax_hos[0].get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72)
+        )
         fig_hos.legend(
             *scs_hos[most_failures_index].legend_elements(),
             bbox_to_anchor=(1.13, 0.62),
@@ -616,15 +635,17 @@ def plot_cpu_ram(data, dataset_index):
 
         fig_hos.tight_layout()
         fig_hos.savefig(f"{individual_data_path}png/{component}.png")
-        fig_hos.savefig(f"{individual_data_path}png/{component}.svg")
+        if SAVE_SVG:
+            fig_hos.savefig(f"{individual_data_path}png/{component}.svg")
 
         # ALL PLOTS
         # xlabel and ylabel in the middle
         fig_all.supylabel(f"{component.upper()} Usage (%)")
         fig_all.supxlabel("Interval")
 
-
-        fig_all.legend(*ax_all[0].get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72))
+        fig_all.legend(
+            *ax_all[0].get_legend_handles_labels(), bbox_to_anchor=(1.13, 0.72)
+        )
         fig_all.legend(
             *scs_hos[most_failures_index].legend_elements(),
             bbox_to_anchor=(1.13, 0.62),
@@ -633,7 +654,8 @@ def plot_cpu_ram(data, dataset_index):
 
         fig_all.tight_layout()
         fig_all.savefig(f"{individual_data_path}png/{component}_all.png")
-        fig_all.savefig(f"{individual_data_path}png/{component}_all.svg")
+        if SAVE_SVG:
+            fig_all.savefig(f"{individual_data_path}png/{component}_all.svg")
 
     plot_usage_and_failures("cpu")
     plot_usage_and_failures("ram")
@@ -645,16 +667,21 @@ def plot_data():
     os.makedirs(os.path.dirname(individual_path), exist_ok=True)
 
     for i in range(NUMBER_OF_SIMULATIONS):
+        print("plotting data for simulation", i)
         os.makedirs(os.path.dirname(f"{individual_path}data{i}/"), exist_ok=True)
         os.makedirs(os.path.dirname(f"{individual_path}data{i}/png/"), exist_ok=True)
-        os.makedirs(os.path.dirname(f"{individual_path}data{i}/png/indiv/"), exist_ok=True)
+        os.makedirs(
+            os.path.dirname(f"{individual_path}data{i}/png/indiv/"), exist_ok=True
+        )
         os.makedirs(os.path.dirname(f"{individual_path}data{i}/svg/"), exist_ok=True)
-        os.makedirs(os.path.dirname(f"{individual_path}data{i}/svg/indiv/"), exist_ok=True)
+        os.makedirs(
+            os.path.dirname(f"{individual_path}data{i}/svg/indiv/"), exist_ok=True
+        )
 
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
 
-        num_hosts = int(len(json.loads(data_temp["cpu"][0])) / 2)
+        num_hosts = len(json.loads(data_temp["cpu"][0]))
         # print(f'Number of hosts: {num_hosts}')
 
         data_temp = data_temp.drop(columns=["disk", "diskavailable"])
@@ -662,7 +689,7 @@ def plot_data():
         headers = data_temp.columns
 
         # create list of copies of data
-        data = [data_temp.copy() for _ in range(2 * num_hosts)]
+        data = [data_temp.copy() for _ in range(num_hosts)]
 
         for j in range(len(data)):
             for header in headers:
@@ -670,34 +697,30 @@ def plot_data():
                     data[j][header] = data[j][header].apply(lambda x: json.loads(x)[j])
 
         plot_distribution(
-            data[:num_hosts],   # only hosts, not replicas
+            data[::2],  # only hosts, not replicas
             i,
         )
 
         plot_cpu_ram(data, i)
 
+        return()
+
         # plot number pf containers
         fig, ax = plt.subplots(
-            nrows=num_hosts, ncols=1, sharex=True, sharey=True, figsize=(10, 5)
+            nrows=num_hosts // 2, ncols=1, sharex=True, sharey=True, figsize=(10, 5)
         )
 
         for h_i in range(num_hosts):
             # INDIVIDUAL PLOT
             fig_in, ax_in = plt.subplots(figsize=(10, 5))
-            ax_in.plot(
-                data[h_i]["interval"],
-                data[h_i]["numcontainers"]
-            )
+            ax_in.plot(data[h_i]["interval"], data[h_i]["numcontainers"])
 
             # SUBPLOT
 
             # component usage
-            ax[h_i].plot(
-                data[h_i]["interval"],
-                data[h_i]["numcontainers"]
-            )
+            ax[h_i].plot(data[h_i]["interval"], data[h_i]["numcontainers"])
 
-            #ax[h_i].set_ylim([0, 100])
+            # ax[h_i].set_ylim([0, 100])
             ax[h_i].set_xlim([0, len(data[h_i]["interval"])])
             ax[h_i].set_title(f"Host {h_i}")
 
@@ -708,7 +731,8 @@ def plot_data():
         ax[-1].set_xlabel("Interval")
         plt.tight_layout()
         plt.savefig(f"{individual_path}data{i}/numcontainers.png")
-        plt.savefig(f"{individual_path}data{i}/numcontainers.svg")
+        if SAVE_SVG:
+            plt.savefig(f"{individual_path}data{i}/numcontainers.svg")
 
 
 def big_merged_data_eda():
@@ -755,16 +779,14 @@ def big_merged_data_eda():
         datapath_i = f"{DATAPATH}data/data{i}.csv"
         data_temp = pd.read_csv(datapath_i)
 
-        num_hosts = int(len(json.loads(data_temp["cpu"][0])) / 2)
-
         data_temp_cpu = data_temp[cpu_headers.keys()]
         data_temp_ram = data_temp[ram_headers.keys()]
 
         data_temp_cpu = data_temp_cpu.applymap(
-            lambda x: json.loads(x)[:num_hosts]
+            lambda x: json.loads(x)[::2]
         ).apply(pd.Series.explode)
         data_temp_ram = data_temp_ram.applymap(
-            lambda x: json.loads(x)[:num_hosts]
+            lambda x: json.loads(x)[::2]
         ).apply(pd.Series.explode)
 
         data_cpu[i] = data_temp_cpu
@@ -774,7 +796,7 @@ def big_merged_data_eda():
     merged_big_data_ram = pd.concat(data_ram, ignore_index=True)
 
     print(merged_big_data_cpu.shape, merged_big_data_ram.shape)
-    # (90090, 7) (90090, 9)
+    # (210210, 7) (210210, 9)
 
     # 0. Divide by 2 the number of failures (each failure level corresponds to 2 containers)
     merged_big_data_cpu["cpufailures"] = merged_big_data_cpu["cpufailures"] // 2
@@ -800,33 +822,32 @@ def big_merged_data_eda():
 
     #   ---- DESCRIPTION ----
     #   CPU:
-    #                 cpu  numcontainers      baseips  ipsavailable       ipscap  apparentips  cpufailures
-    #   count    90090.0        90090.0      90090.0       90090.0      90090.0      90090.0      90090.0
-    #   mean   17.614404       7.298912   755.227653   8658.772347       9414.0  1430.991764     0.144655
-    #   std     8.116511       2.488022   406.037958   4828.979276  5018.971237   686.680416     0.425868
-    #   min          0.0            0.0          0.0   2249.415044       4029.0          0.0          0.0
-    #   25%    11.764706            6.0   458.937091   3675.184072       4029.0        924.0          0.0
-    #   50%    16.207496            7.0   682.406998   7397.433305       8102.0       1304.0          0.0
-    #   75%    22.154409            9.0   979.996389  14807.924211      16111.0       1825.0          0.0
-    #   max    65.053363           20.0  3439.983182       16111.0      16111.0       5678.0          3.0
-    #   
+    #                    cpu  numcontainers         baseips  ipsavailable         ipscap    apparentips    cpufailures
+    #   count  210210.000000  210210.000000  210210.000000  210210.000000  210210.000000  210210.000000  210210.000000
+    #   mean       36.338368      12.449065    2613.224643   10721.480119   13334.704762    5730.415599       1.498501
+    #   std        14.269751       8.019919    3694.104721   10307.509306   13603.247164    7473.205928       1.118482
+    #   min         0.000000       0.000000       0.000000     803.080283    2049.000000       0.000000       0.000000
+    #   25%        25.788544       7.000000     309.587890    2513.432869    2848.000000     862.000000       0.000000
+    #   50%        34.916865      10.000000     526.387982    3433.303559    3782.500000    1317.000000       1.000000
+    #   75%        45.821727      15.000000    3356.711068   18182.780082   21299.000000    7691.000000       2.000000
+    #   max       100.000000      52.000000   22736.817807   40960.000000   40960.000000   39800.000000       3.000000
+    #
     #   RAM:
-    #                 ram  numcontainers       ram_s      ram_r      ram_w  ramavailable_s  ramavailable_r  ramavailable_w  ramfailures
-    #   count    90090.0        90090.0     90090.0    90090.0    90090.0         90090.0         90090.0         90090.0      90090.0
-    #   mean      4.0001       7.298912  506.462041   1.391615   1.139732    18105.204626      368.121718      256.110268     0.144367
-    #   std     3.672401       2.488022  502.913795   4.792341   4.561932    12171.185337        8.151337       43.073732     0.424373
-    #   min          0.0            0.0         0.0        0.0        0.0       2852.3406      290.007467      197.101333          0.0
-    #   25%     1.217631            6.0  186.818967     0.0152     0.0092     4129.343833        359.9776      199.991867          0.0
-    #   50%     2.901928            7.0    333.4441      0.038   0.030467    16799.478733        371.9444        266.7152          0.0
-    #   75%     5.695342            9.0  604.677533   0.229067   0.196667    33291.646067      375.535067      304.739167          0.0
-    #   max    33.589276           20.0   4966.5762  74.025333  69.648667         34360.0          376.54           305.0          3.0
-
+    #                   ram   numcontainers          ram_s          ram_r          ram_w  ramavailable_s  ramavailable_r  ramavailable_w    ramfailures
+    #   count  210210.000000  210210.000000  210210.000000  210210.000000  210210.000000   210210.000000   210210.000000   210210.000000  210210.000000
+    #   mean        7.130378      12.449065    1696.437762       3.038415       1.221677    23618.647952      366.181585      238.314037       1.498501
+    #   std         4.239019       8.019919    2651.719945       9.074757       3.751291    26449.240598       11.013360       46.096627       1.118482
+    #   min         0.000000       0.000000       0.000000       0.000000       0.000000     1212.807133      231.175467      188.060533       0.000000
+    #   25%         4.003028       7.000000     200.625683       0.021200       0.012400     2654.032733      359.926400      199.969867       0.000000
+    #   50%         6.487582      10.000000     360.544067       0.094533       0.074133     3624.211100      371.906000      199.997333       1.000000
+    #   75%         9.508271      15.000000    2000.960951       0.594133       0.418800    42049.630950      371.988400      299.821600       2.000000
+    #   max        43.773429      52.000000   19598.173600     145.364533      78.689467    81920.000000      376.540000      305.000000       3.000000
 
     # 2. Duplicate Values
     print(
         f"\n---- DUPLICATES:\tCPU: {merged_big_data_cpu.duplicated().sum()}\tRAM: {merged_big_data_ram.duplicated().sum()}"
     )
-    #   ---- DUPLICATES:        CPU: 279        RAM: 274
+    #   ---- DUPLICATES:        CPU: 212        RAM: 234
 
     # 2.1. Drop duplicates
     merged_big_data_cpu.drop_duplicates(inplace=True)
@@ -842,19 +863,18 @@ def big_merged_data_eda():
     print(
         f"\n---- CPU FAILURES ----\n{merged_big_data_cpu['cpufailures'].value_counts()}"
     )
-    #   0    79173
-    #   1     8446
-    #   2     1990
-    #   3      202
+    #   0    52501
+    #   3    52500
+    #   2    52500
+    #   1    52497
 
     print(
         f"\n---- RAM FAILURES ----\n{merged_big_data_ram['ramfailures'].value_counts()}"
     )
-    #   0    79176
-    #   1     8456
-    #   2     2002
-    #   3      182
-
+    #   0    52501
+    #   3    52500
+    #   2    52500
+    #   1    52475
 
     """
 
@@ -864,7 +884,8 @@ def big_merged_data_eda():
     corr = merged_big_data_cpu.corr()
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.png")
-    plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{big_analysis_path}correlation_matrix_cpu.svg")
 
     # Correlation Matrix shows that there is no strong correlation between cpufailures and [numcontainers, baseips, ipsavailable, ipscap, host_ltype]
     # With this information, we will try to predict cpufailures using all the features and compare it to the results of using only the features that have a correlation with cpufailures
@@ -875,7 +896,8 @@ def big_merged_data_eda():
     corr = merged_big_data_ram.corr()
     sns.heatmap(corr, annot=True, fmt=".3f", ax=ax)
     plt.savefig(f"{big_analysis_path}correlation_matrix_ram.png")
-    plt.savefig(f"{big_analysis_path}correlation_matrix_ram.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{big_analysis_path}correlation_matrix_ram.svg")
 
     # Correlation Matrix shows no strong correlation between ramfailures and others
     plt.close('all')
@@ -898,7 +920,8 @@ def big_merged_data_eda():
             sns.boxplot(x='cpufailures', y=feature, data=merged_big_data_cpu, ax=ax[1])
 
             plt.savefig(f'{big_analysis_path}pairs/cpu/{feature}_vs_numfailures.png')
-            plt.savefig(f'{big_analysis_path}pairs/cpu/{feature}_vs_numfailures.svg')
+            if SAVE_SVG:
+                plt.savefig(f'{big_analysis_path}pairs/cpu/{feature}_vs_numfailures.svg')
 
     for feature in merged_big_data_ram.columns:
         if feature != 'ramfailures':
@@ -917,7 +940,8 @@ def big_merged_data_eda():
             sns.boxplot(x='ramfailures', y=feature, data=merged_big_data_ram, ax=ax[1])
 
             plt.savefig(f'{big_analysis_path}pairs/ram/{feature}_vs_numfailures.png')
-            plt.savefig(f'{big_analysis_path}pairs/ram/{feature}_vs_numfailures.svg')
+            if SAVE_SVG:
+                plt.savefig(f'{big_analysis_path}pairs/ram/{feature}_vs_numfailures.svg')
 
     plt.close('all')
 
@@ -926,12 +950,14 @@ def big_merged_data_eda():
     plt.figure()
     sns.pairplot(merged_big_data_cpu, hue='cpufailures')
     plt.savefig(f'{big_analysis_path}pairs/pairplot_cpu.png')
-    plt.savefig(f'{big_analysis_path}pairs/pairplot_cpu.svg')
+    if SAVE_SVG:
+        plt.savefig(f'{big_analysis_path}pairs/pairplot_cpu.svg')
 
     plt.figure()
     sns.pairplot(merged_big_data_ram, hue='ramfailures')
     plt.savefig(f'{big_analysis_path}pairs/pairplot_ram.png')
-    plt.savefig(f'{big_analysis_path}pairs/pairplot_ram.svg')
+    if SAVE_SVG:
+        plt.savefig(f'{big_analysis_path}pairs/pairplot_ram.svg')
     plt.close('all')
 
     """
@@ -964,12 +990,12 @@ def big_merged_data_eda():
     print(featureScores.sort_values(by="Score", ascending=False))
 
     #              Specs        Score
-    #   0            cpu  1657.570152
-    #   5    apparentips  1639.296489
-    #   1  numcontainers     4.107048
-    #   2        baseips     2.212147
-    #   3   ipsavailable     0.710469
-    #   4         ipscap     0.541987
+    #   0            cpu  20881.140763
+    #   5    apparentips    678.921026
+    #   1  numcontainers      2.238390
+    #   2        baseips      1.616620
+    #   4         ipscap      0.371421
+    #   3   ipsavailable      0.304541
 
     """
     print('\n\t-- KENDALL --')
@@ -1007,12 +1033,12 @@ def big_merged_data_eda():
     print(featureScores.sort_values(by="Score", ascending=False))
 
     #              Specs         Score
-    #   5    apparentips  1.516488e+06
-    #   0            cpu  1.737074e+04
-    #   3   ipsavailable  5.738748e+03
-    #   4         ipscap  4.353412e+03
-    #   2        baseips  1.433564e+03
-    #   1  numcontainers  1.017751e+01
+    #   5    apparentips  1.964843e+07
+    #   0            cpu  2.686123e+05
+    #   2        baseips  2.531322e+04
+    #   4         ipscap  1.546237e+04
+    #   3   ipsavailable  9.033255e+03
+    #   1  numcontainers  3.460947e+01
 
 
     # FEATURE IMPORTANCE - CPU
@@ -1032,12 +1058,12 @@ def big_merged_data_eda():
     )
     print(feat_importances.sort_values(ascending=False))
 
-    #   numcontainers    0.296458
-    #   cpu              0.210491
-    #   apparentips      0.207965
-    #   ipsavailable     0.139228
-    #   baseips          0.136735
-    #   ipscap           0.009123
+    #   apparentips      0.244663
+    #   cpu              0.231049
+    #   numcontainers    0.145146
+    #   baseips          0.143994
+    #   ipsavailable     0.141739
+    #   ipscap           0.093409
 
     '''
 
@@ -1072,7 +1098,8 @@ def big_merged_data_eda():
     )
 
     plt.savefig(f"{big_analysis_path}dim_red/pca_cpu.png")
-    plt.savefig(f"{big_analysis_path}dim_red/pca_cpu.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{big_analysis_path}dim_red/pca_cpu.svg")
 
     # TSNE
     # it takes a lot of time to run (~650s)
@@ -1102,25 +1129,26 @@ def big_merged_data_eda():
     )
 
     plt.savefig(f"{big_analysis_path}dim_red/tsne_cpu.png")
-    plt.savefig(f"{big_analysis_path}dim_red/tsne_cpu.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{big_analysis_path}dim_red/tsne_cpu.svg")
 
     """
 
-    """
+    #"""
     # AI
 
     # Train and Evaluate with all features - CPU
     metrics, _ = train_and_evaluate(
         merged_big_data_cpu,
         "cpufailures",
-        RandomForestClassifier(n_estimators=100, n_jobs=-1),
+        RandomForestClassifier(n_jobs=-1),
         binary=False,
     )
     # binary classification
     metrics_bin, _ = train_and_evaluate(
         merged_big_data_cpu,
         "cpufailures",
-        RandomForestClassifier(n_estimators=100, n_jobs=-1),
+        RandomForestClassifier(n_jobs=-1),
         binary=True,
     )
 
@@ -1133,25 +1161,25 @@ def big_merged_data_eda():
         '''\
     )
 
-    #   METRICS ALL FEATURES                                METRICS ALL FEATURES (binary)                   
-    #           accuracy  precision recall    f1        		accuracy  precision recall    f1        
-    #   mean	0.9318    0.7297    0.5922    0.6384    		0.9459    0.8306    0.6780    0.7466    
-    #   median	0.9317    0.7359    0.5920    0.6388    		0.9460    0.8302    0.6773    0.7462    
-    #   std	    0.0012    0.0240    0.0119    0.0145    		0.0010    0.0074    0.0069    0.0051    
+    #   METRICS ALL FEATURES                            	METRICS ALL FEATURES (binary)                   
+    #    	    accuracy  precision recall    f1        		accuracy  precision recall    f1        
+    #   mean	0.6538    0.6490    0.6539    0.6510    		0.9058    0.9371    0.9373    0.9372    
+    #   median	0.6538    0.6491    0.6541    0.6511    		0.9058    0.9371    0.9372    0.9373    
+    #   std	    0.0017    0.0016    0.0016    0.0016    		0.0010    0.0011    0.0013    0.0007    
        
 
     # Train and Evaluate with all features - RAM
     metrics, _ = train_and_evaluate(
         merged_big_data_ram,
         "ramfailures",
-        RandomForestClassifier(n_estimators=100, n_jobs=-1),
+        RandomForestClassifier(n_jobs=-1),
         binary=False,
     )
     # binary classification
     metrics_bin, _ = train_and_evaluate(
         merged_big_data_ram,
         "ramfailures",
-        RandomForestClassifier(n_estimators=100, n_jobs=-1),
+        RandomForestClassifier(n_jobs=-1),
         binary=True,
     )
 
@@ -1166,37 +1194,36 @@ def big_merged_data_eda():
 
     #   METRICS ALL FEATURES                            	METRICS ALL FEATURES (binary)                   
     #   	    accuracy  precision recall    f1        		accuracy  precision recall    f1        
-    #   mean	0.8801    0.2511    0.2500    0.2355    		0.8793    0.1341    0.0044    0.0085    
-    #   median	0.8801    0.2457    0.2500    0.2353    		0.8794    0.1299    0.0042    0.0082    
-    #   std	    0.0014    0.0180    0.0003    0.0006    		0.0015    0.0316    0.0011    0.0022    
+    #   mean	0.2654    0.2654    0.2654    0.2654    		0.7413    0.7517    0.9783    0.8501    
+    #   median	0.2653    0.2653    0.2653    0.2653    		0.7413    0.7512    0.9782    0.8502    
+    #   std	    0.0018    0.0018    0.0018    0.0018    		0.0014    0.0014    0.0009    0.0009    
         
-    """
+    #"""
 
-    
     # CPU Random Forest Classifier with grid search
     # Use f1 as scoring metric
 
     param_grid = {
-        "n_estimators": [50, 100, 200, 500],                  # default 100
-        "criterion": ["gini", "entropy", "log_loss"],               # default "gini"
-        "min_samples_split": [2, 5, 10],                            # default 2
-        "min_samples_leaf": [1, 2, 5],                              # default 1
-        "max_features": [None, "sqrt", "log2"],                     # default "sqrt"
-        "bootstrap": [True, False],                                 # default True
+        "n_estimators": [50, 100, 200, 500],  # default 100
+        "criterion": ["gini", "entropy", "log_loss"],  # default "gini"
+        "min_samples_split": [2, 5, 10],  # default 2
+        "min_samples_leaf": [1, 2, 5],  # default 1
+        "max_features": [None, "sqrt", "log2"],  # default "sqrt"
+        "bootstrap": [True, False],  # default True
         "n_jobs": [-1],
     }
 
     # Train and Evaluate with all features - CPU
 
-    #metrics, _ = train_and_evaluate(
-    #    merged_big_data_cpu,
-    #    "cpufailures",
-    #    RandomForestClassifier(),
-    #    binary=False,
-    #    grid_search=True,
-    #    param_grid=param_grid,
-    #)
-    
+    metrics, _ = train_and_evaluate(
+       merged_big_data_cpu,
+       "cpufailures",
+       RandomForestClassifier(),
+       binary=False,
+       grid_search=True,
+       param_grid=param_grid,
+    )
+
     """
     #   Grid search time: 35103.148278713226
     #   {'bootstrap': True, 'criterion': 'entropy', 'max_features': None, 'min_samples_leaf': 5, 'min_samples_split': 10, 'n_estimators': 500, 'n_jobs': -1}
@@ -1257,34 +1284,34 @@ def big_merged_data_eda():
     """
 
     # binary classification
-    #metrics_bin, _ = train_and_evaluate(
-    #    merged_big_data_cpu,
-    #    "cpufailures",
-    #    RandomForestClassifier(),
-    #    binary=True,
-    #    grid_search=True,
-    #    param_grid=param_grid,
-    #)
+    metrics_bin, _ = train_and_evaluate(
+       merged_big_data_cpu,
+       "cpufailures",
+       RandomForestClassifier(),
+       binary=True,
+       grid_search=True,
+       param_grid=param_grid,
+    )
 
     #   Grid search time: 5368.719045162201
     #   {'criterion': 'gini', 'max_features': 'sqrt', 'min_samples_leaf': 5, 'min_samples_split': 10, 'n_estimators': 100, 'n_jobs': -1}
     #   RandomForestClassifier(min_samples_leaf=5, min_samples_split=10, n_jobs=-1)
     #   Train data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.97      0.99      0.98     55401
     #              1       0.93      0.74      0.82      7466
-    #   
+    #
     #       accuracy                           0.96     62867
     #      macro avg       0.95      0.87      0.90     62867
     #   weighted avg       0.96      0.96      0.96     62867
-    #   
+    #
     #   Test data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.96      0.99      0.97     23772
     #              1       0.87      0.67      0.76      3172
-    #   
+    #
     #       accuracy                           0.95     26944
     #      macro avg       0.91      0.83      0.86     26944
     #   weighted avg       0.95      0.95      0.95     26944
@@ -1296,24 +1323,23 @@ def big_merged_data_eda():
     #                          n_estimators=500, n_jobs=-1)
     #   Train data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.97      0.99      0.98     55401
     #              1       0.93      0.76      0.84      7466
-    #   
+    #
     #       accuracy                           0.96     62867
     #      macro avg       0.95      0.88      0.91     62867
     #   weighted avg       0.96      0.96      0.96     62867
-    #   
+    #
     #   Test data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.96      0.98      0.97     23772
     #              1       0.86      0.69      0.77      3172
-    #   
+    #
     #       accuracy                           0.95     26944
     #      macro avg       0.91      0.84      0.87     26944
     #   weighted avg       0.95      0.95      0.95     26944
-
 
     # RAAAAAAAAAAM
 
@@ -1333,24 +1359,24 @@ def big_merged_data_eda():
     #                          min_samples_split=10, n_estimators=200, n_jobs=-1)
     #   Train data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.88      1.00      0.94     55419
     #              1       1.00      0.04      0.07      5923
     #              2       0.00      0.00      0.00      1393
     #              3       0.00      0.00      0.00       136
-    #   
+    #
     #       accuracy                           0.88     62871
     #      macro avg       0.47      0.26      0.25     62871
     #   weighted avg       0.87      0.88      0.83     62871
-    #   
+    #
     #   Test data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.88      1.00      0.94     23757
     #              1       0.00      0.00      0.00      2533
     #              2       0.00      0.00      0.00       609
     #              3       0.00      0.00      0.00        46
-    #   
+    #
     #       accuracy                           0.88     26945
     #      macro avg       0.22      0.25      0.23     26945
     #   weighted avg       0.78      0.88      0.83     26945
@@ -1361,24 +1387,24 @@ def big_merged_data_eda():
     #                          n_jobs=-1)
     #   Train data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       1.00      1.00      1.00     55419
     #              1       1.00      1.00      1.00      5923
     #              2       1.00      1.00      1.00      1393
     #              3       1.00      1.00      1.00       136
-    #   
+    #
     #       accuracy                           1.00     62871
     #      macro avg       1.00      1.00      1.00     62871
     #   weighted avg       1.00      1.00      1.00     62871
-    #   
+    #
     #   Test data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.88      0.88      0.88     23757
     #              1       0.11      0.11      0.11      2533
     #              2       0.02      0.02      0.02       609
     #              3       0.02      0.02      0.02        46
-    #   
+    #
     #       accuracy                           0.78     26945
     #      macro avg       0.26      0.26      0.26     26945
     #   weighted avg       0.79      0.78      0.79     26945
@@ -1399,20 +1425,20 @@ def big_merged_data_eda():
     #                          n_estimators=200, n_jobs=-1)
     #   Train data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.88      1.00      0.94     55431
     #              1       1.00      0.01      0.01      7440
-    #   
+    #
     #       accuracy                           0.88     62871
     #      macro avg       0.94      0.50      0.48     62871
     #   weighted avg       0.90      0.88      0.83     62871
-    #   
+    #
     #   Test data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.88      1.00      0.94     23745
     #              1       0.00      0.00      0.00      3200
-    #   
+    #
     #       accuracy                           0.88     26945
     #      macro avg       0.44      0.50      0.47     26945
     #   weighted avg       0.78      0.88      0.83     26945
@@ -1423,20 +1449,20 @@ def big_merged_data_eda():
     #                          n_estimators=50, n_jobs=-1)
     #   Train data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       1.00      1.00      1.00     55431
     #              1       1.00      1.00      1.00      7440
-    #   
+    #
     #       accuracy                           1.00     62871
     #      macro avg       1.00      1.00      1.00     62871
     #   weighted avg       1.00      1.00      1.00     62871
-    #   
+    #
     #   Test data
     #                 precision    recall  f1-score   support
-    #   
+    #
     #              0       0.88      0.88      0.88     23745
     #              1       0.12      0.13      0.12      3200
-    #   
+    #
     #       accuracy                           0.79     26945
     #      macro avg       0.50      0.50      0.50     26945
     #   weighted avg       0.79      0.79      0.79     26945
@@ -1486,10 +1512,13 @@ def test():
                 sns.lineplot(x="interval", y=f"{r}_{hh}", data=host, ax=ax[i][j])
 
     plt.savefig("ram.png")
-    plt.savefig("ram.svg")
+    if SAVE_SVG:
+        plt.savefig("ram.svg")
 
 
-def train_and_evaluate(data, y_col, model, data_test=None, binary=False, grid_search=False, param_grid=None):
+def train_and_evaluate(
+    data, y_col, model, data_test=None, binary=False, grid_search=False, param_grid=None
+):
     """
     Train and evaluate a model using the given data and model
     It will run NUMBER_OF_REPETITIONS times
@@ -1527,7 +1556,7 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False, grid_se
         if not param_grid:
             print("param_grid must be provided for grid search")
             return
-        
+
         # split data if test data is not provided
         if data_test is None:
             train, test = train_test_split(data, test_size=0.3, shuffle=True)
@@ -1571,7 +1600,13 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False, grid_se
 
         t = time.time()
 
-        grid = GridSearchCV(model, param_grid, verbose=2, n_jobs=-1, scoring=make_scorer(f1_score , average="binary" if binary else "macro"))
+        grid = GridSearchCV(
+            model,
+            param_grid,
+            verbose=2,
+            n_jobs=-1,
+            scoring=make_scorer(f1_score, average="binary" if binary else "macro"),
+        )
 
         grid.fit(x_train, y_train)
 
@@ -1593,11 +1628,7 @@ def train_and_evaluate(data, y_col, model, data_test=None, binary=False, grid_se
 
         print(classification_report(y_test, y_pred))
 
-
-        
         return None, None
-
-        
 
     metrics = [[], [], [], []]
     best_f1 = 0
@@ -1660,15 +1691,14 @@ def plot_metrics(metrics, name):
     plt.boxplot(metrics)
     plt.xticks([1, 2, 3, 4], ["Accuracy", "Precision", "Recall", "F1"])
     plt.savefig(f"{FIGURES_PATH}metrics/{name}.png")
-    plt.savefig(f"{FIGURES_PATH}metrics/{name}.svg")
+    if SAVE_SVG:
+        plt.savefig(f"{FIGURES_PATH}metrics/{name}.svg")
 
 
 if __name__ == "__main__":
     time_start = time.time()
 
     # generate_datasets()
-
-    # failure_distribution()
 
     # plot_data()
 

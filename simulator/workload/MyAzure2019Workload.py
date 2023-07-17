@@ -13,6 +13,7 @@ from zipfile import ZipFile
 import shutil
 import pandas as pd
 import warnings
+
 warnings.simplefilter("ignore")
 
 from tqdm import tqdm
@@ -102,9 +103,9 @@ class MyAzure2019Workload(Workload):
         self.disk_sizes = [1, 2, 3]
         self.meanSLA, self.sigmaSLA = 20, 3
         self.meanSLA, self.sigmaSLA = 4, 1
-        self.max_sla = np.ceil(
-            self.meanSLA + 4 * self.sigmaSLA
-        ).astype(int)  # it cathes 99.9% of the data
+        self.max_sla = np.ceil(self.meanSLA + 4 * self.sigmaSLA).astype(
+            int
+        )  # it cathes 99.9% of the data
 
         self.csv_data = [[], [], []]  # 3 types [edge, fog, cloud]zz
 
@@ -112,11 +113,10 @@ class MyAzure2019Workload(Workload):
             with open(f"{possible_path}{self.meanSLA}-{self.sigmaSLA}.pkl", "rb") as f:
                 self.csv_data = pickle.load(f)
 
-
         else:
-            cpus_ips = [2048, 8*2048, 20*2048]  # minimum - from MyFog
-            rams = [2*1024, 32*1024, 80*1024]   # minimum - from MyFog
-            max_containers = [20, 30, 50]  # manually
+            cpus_ips = [2048, 8 * 2048, 20 * 2048]  # minimum - from MyFog
+            rams = [2 * 1024, 32 * 1024, 80 * 1024]  # minimum - from MyFog
+            max_containers = [15, 20, 35]  # manually
 
             all_ips = []
             for i in range(1, 500):
@@ -127,14 +127,18 @@ class MyAzure2019Workload(Workload):
 
                 ips = (
                     df["CPU capacity provisioned [MHZ]"].to_numpy()
-                    * df2.to_numpy()[: , 0]
+                    * df2.to_numpy()[:, 0]
                     / 100
                 )
                 ram = df["Memory usage [KB]"].to_numpy()
 
-                temp_ips = ips_multiplier * np.max(ips[:self.max_sla]) * 0.9
+                temp_ips = ips_multiplier * np.max(ips[: self.max_sla])
                 all_ips.append(temp_ips)
-                temp_ram = np.max(ram[:self.max_sla]) / 4000
+                temp_ram = np.max(ram[: self.max_sla]) / 4000
+                min_ram = np.min(ram[: self.max_sla]) / 4000
+
+                if not min_ram > 0:
+                    continue
 
                 if (
                     cpus_ips[0] * 0.01 < temp_ips < cpus_ips[0] / max_containers[0]
@@ -218,11 +222,13 @@ class MyAzure2019Workload(Workload):
             with open(f"{possible_path}{self.meanSLA}-{self.sigmaSLA}.pkl", "wb") as f:
                 pickle.dump(self.csv_data, f)
 
+        """
         print(
             len(self.csv_data[0]),
             len(self.csv_data[1]),
             len(self.csv_data[2]),
         )
+        """
 
         # exit()
 
@@ -235,18 +241,18 @@ class MyAzure2019Workload(Workload):
         workloadlist = []
 
         for host in hosts:
-            #print(host)
+            # print(host)
 
             host_layer_type = host.layer_type
 
             # poisson arrival with mean
             for _ in range(max(1, np.random.poisson(self.num))):
                 CreationID = self.creation_id
-                
+
                 csv = random.choice(self.csv_data[host_layer_type])
-                
+
                 sla = round(random.gauss(self.meanSLA, self.sigmaSLA))
-                
+
                 ips_model_list = csv["ips"]
                 IPSModel = IPSMBitbrain(
                     ips_model_list,
@@ -266,7 +272,15 @@ class MyAzure2019Workload(Workload):
                     csv["disk_w"],
                 )
                 workloadlist.append(
-                    (CreationID, host_layer_type, interval, IPSModel, RAMModel, DiskModel, host.id)
+                    (
+                        CreationID,
+                        host_layer_type,
+                        interval,
+                        IPSModel,
+                        RAMModel,
+                        DiskModel,
+                        host.id,
+                    )
                 )
                 self.creation_id += 1
 
@@ -294,20 +308,13 @@ class MyAzure2019Workload(Workload):
     def generateNewFailures(
         self, interval, host, failure_type=["CPU", "RAM"], max_duration=20
     ):
-        #
-        # layer_type:	0 - edge
-        # 				1 - fog
-        # 				2 - cloud
-        #
-
-        
         host_layer_type = host.layer_type
 
         failurelist = []
         for _ in range(2):
             CreationID = self.creationFailure_id
             csv = random.choice(self.csv_data[host_layer_type])
-            
+
             sla = max_duration
             zeros = [0] * max_duration
 
@@ -335,7 +342,15 @@ class MyAzure2019Workload(Workload):
             disk_size = self.disk_sizes[host_layer_type]
             DiskModel = DMBitbrain(disk_size, zeros, zeros)
             failurelist.append(
-                (CreationID, host_layer_type, interval, IPSModel, RAMModel, DiskModel)
+                (
+                    CreationID,
+                    host_layer_type,
+                    interval,
+                    IPSModel,
+                    RAMModel,
+                    DiskModel,
+                    host.id,
+                )
             )
             self.creationFailure_id += 1
 

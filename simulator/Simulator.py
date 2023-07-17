@@ -249,7 +249,7 @@ class Simulator:
 
     ## FAILURES
     def addFailure(
-        self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel
+        self, CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, target_id
     ):
         for i, c in enumerate(self.failurelist):
             if c == None or not c.active:
@@ -262,7 +262,7 @@ class Simulator:
                     RAMModel,
                     DiskModel,
                     self,
-                    HostID=-1,
+                    targetHostID=target_id,
                 )
                 self.failurelist[i] = failure
                 return failure
@@ -277,9 +277,10 @@ class Simulator:
             IPSModel,
             RAMModel,
             DiskModel,
+            target_id
         ) in deployed:
             dep = self.addFailure(
-                CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel
+                CreationID, l_type, CreationInterval, IPSModel, RAMModel, DiskModel, target_id
             )
             deployedFailures.append(dep)
         return [failure.id for failure in deployedFailures]

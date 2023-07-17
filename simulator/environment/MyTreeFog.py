@@ -99,8 +99,8 @@ class MyFog:
             fog = hosts[e + 2 + n_fog][6]
 
             if fog != prev_fog:
-                print(prev_fog, fog, end="\t")
-                print(prev_fog_start, -n_edge + 1 + e * 2)
+                #   print(prev_fog, fog, end="\t")
+                #   print(prev_fog_start, -n_edge + 1 + e * 2)
                 pos[prev_fog] = (prev_fog_start + 1 + prev_fog_count - 2, -1)
                 pos[prev_fog + 1] = (prev_fog_start + 1 + prev_fog_count, -1)
                 prev_fog = fog

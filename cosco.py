@@ -8,12 +8,8 @@ from time import time
 from simulator.Simulator import *
 
 # from simulator.environment.MyFog import *
-<<<<<<< HEAD
 # from simulator.environment.MyVariableFog import *
 from simulator.environment.MyTreeFog import *
-=======
-from simulator.environment.MyDynamicFog import *
->>>>>>> 7c48b65f67a9128592350707d92c033eac093a70
 
 # from simulator.workload.MyBitbrainWorkload import *
 from simulator.workload.MyAzure2019Workload import *
@@ -41,16 +37,16 @@ INTERVAL_TIME = 300  # seconds
 # NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 2
 
-FAULT_RATE = 0.0
+FAULT_RATE = 1.0
 FAULT_TIME = 15
 FAULT_INCREASE_TIME = 5
 RECOVER_TIME = 5
-FAULTY_HOSTS = [0, 1, 2]
+FAULTY_HOSTS = [i for i in range(0, HOSTS, 2)]
 FAILURE_TYPES = ["CPU", "RAM"]
 ACCUMULATIVE_FAULTS = True
 
 
-def initalizeEnvironment(prints=True, save_essential = False):
+def initalizeEnvironment(prints=True, save_essential=False):
     # Initialize simple fog datacenter
     if prints:
         print("Initializing environment...")
@@ -90,9 +86,9 @@ def initalizeEnvironment(prints=True, save_essential = False):
     # Execute first step
     if prints:
         print("Executing first step...")
+
     newcontainerinfos = workload.generateNewContainers(
-        env.interval,
-        env.egdehostlist
+        env.interval, env.egdehostlist
     )  # New containers info
     deployed = env.addContainersInit(
         newcontainerinfos
@@ -131,17 +127,15 @@ def stepSimulation(workload, scheduler, env, stats, prints=True):
         for container in destroyed:
             host = env.hostlist[container.targetHostID]
             container.getHost()
-            #print(f'{container.creationID} destroyed, creating new on Host {host.parentID}')
-            if host.parentID:
-
+            # print(f'{container.creationID} destroyed, creating new on Host {host.parentID}')
+            if host.parentID != None:
                 workload.generateNewContainers(
                     env.interval, [env.getHostByID(host.parentID)]
                 )  # new container for the next layer
 
     # Containers in the edge
     newcontainerinfos = workload.generateNewContainers(
-        env.interval,
-        env.egdehostlist
+        env.interval, env.egdehostlist
     )  # New containers info
     if prints:
         print([(c[0], c[1]) for c in newcontainerinfos])
@@ -202,7 +196,7 @@ def stepSimulation(workload, scheduler, env, stats, prints=True):
 
                     # When increasing the scenario complexity, the failuredecision list will need to be changed (passing targetID as "parameter"?)
                     failuredecision += [
-                        (fid, env.failurelist[fid].getLType())
+                        (fid, env.failurelist[fid].targetHostID)
                         for fid in failuresdeployed
                     ]
 
@@ -269,7 +263,9 @@ def stepSimulation(workload, scheduler, env, stats, prints=True):
     stats.saveStats(deployed, migrations, destroyed, selected, decision, schedulingTime)
 
 
-def saveStats(stats, datacenter, workload, env, save_essential=False):
+def saveStats(
+    stats, datacenter, workload, env, save_essential=False, generate_graphs=False
+):
     dirname = "logs/" + datacenter.__class__.__name__
     dirname += "_" + workload.__class__.__name__
     dirname += "_" + str(NUM_SIM_STEPS)
@@ -286,6 +282,12 @@ def saveStats(stats, datacenter, workload, env, save_essential=False):
 
     if save_essential:
         stats.generateCompleteDataset(dirname, stats.hostinfo, "hostinfo")
+        if generate_graphs:
+            stats.generateGraphsWithInterval(dirname, stats.hostinfo, "host", "cpu")
+            stats.generateGraphsWithInterval(dirname, stats.hostinfo, "host", "ram")
+            stats.generateGraphsWithInterval(
+                dirname, stats.hostinfo, "host", "numcontainers"
+            )
         return
 
     stats.generateDatasets(dirname)
@@ -303,8 +305,10 @@ def saveStats(stats, datacenter, workload, env, save_essential=False):
         pickle.dump(stats, handle)
 
 
-def runCOSCO(prints=False, save_essential=True):
-    datacenter, workload, scheduler, env, stats = initalizeEnvironment(prints, save_essential)
+def runCOSCO(prints=False, save_essential=True, generate_graphs=False):
+    datacenter, workload, scheduler, env, stats = initalizeEnvironment(
+        prints, save_essential
+    )
 
     for step in range(NUM_SIM_STEPS):
         if prints:
@@ -312,11 +316,19 @@ def runCOSCO(prints=False, save_essential=True):
 
         stepSimulation(workload, scheduler, env, stats, prints)
 
-    saveStats(stats, datacenter, workload, env, save_essential=save_essential)
+    saveStats(
+        stats,
+        datacenter,
+        workload,
+        env,
+        save_essential=save_essential,
+        generate_graphs=generate_graphs,
+    )
+
 
 if __name__ == "__main__":
     start = time()
-    
-    runCOSCO(prints=False, save_essential=True)
+
+    runCOSCO(prints=False, save_essential=True, generate_graphs=True)
 
     print("Total time:", time() - start)
