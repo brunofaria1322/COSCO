@@ -9,7 +9,8 @@ from simulator.Simulator import *
 
 # from simulator.environment.MyFog import *
 # from simulator.environment.MyVariableFog import *
-from simulator.environment.MyTreeFog import *
+# from simulator.environment.MyTreeFog import *
+from simulator.environment.MyDynamicTreeFog import *
 
 # from simulator.workload.MyBitbrainWorkload import *
 from simulator.workload.MyAzure2019Workload import *
@@ -28,7 +29,7 @@ usage = "usage: python main.py"
 # Global constants
 NUM_SIM_STEPS = 1000
 # HOSTS = 10 * 5 if opts.env == '' else 10
-HOSTS = 7 * 2
+HOSTS = 15 * 2
 
 CONTAINERS = HOSTS * 10
 FAILURES = HOSTS * 10
@@ -37,7 +38,7 @@ INTERVAL_TIME = 300  # seconds
 # NEW_CONTAINERS = 0 if HOSTS == 10 else 5
 NEW_CONTAINERS = 2
 
-FAULT_RATE = 1.0
+FAULT_RATE = 0.0
 FAULT_TIME = 15
 FAULT_INCREASE_TIME = 5
 RECOVER_TIME = 5
@@ -329,6 +330,6 @@ def runCOSCO(prints=False, save_essential=True, generate_graphs=False):
 if __name__ == "__main__":
     start = time()
 
-    runCOSCO(prints=False, save_essential=True, generate_graphs=True)
+    runCOSCO(prints=True, save_essential=True, generate_graphs=True)
 
     print("Total time:", time() - start)

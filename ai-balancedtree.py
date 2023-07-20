@@ -703,7 +703,7 @@ def plot_data():
 
         plot_cpu_ram(data, i)
 
-        return()
+        return ()
 
         # plot number pf containers
         fig, ax = plt.subplots(
@@ -782,12 +782,12 @@ def big_merged_data_eda():
         data_temp_cpu = data_temp[cpu_headers.keys()]
         data_temp_ram = data_temp[ram_headers.keys()]
 
-        data_temp_cpu = data_temp_cpu.applymap(
-            lambda x: json.loads(x)[::2]
-        ).apply(pd.Series.explode)
-        data_temp_ram = data_temp_ram.applymap(
-            lambda x: json.loads(x)[::2]
-        ).apply(pd.Series.explode)
+        data_temp_cpu = data_temp_cpu.applymap(lambda x: json.loads(x)[::2]).apply(
+            pd.Series.explode
+        )
+        data_temp_ram = data_temp_ram.applymap(lambda x: json.loads(x)[::2]).apply(
+            pd.Series.explode
+        )
 
         data_cpu[i] = data_temp_cpu
         data_ram[i] = data_temp_ram
@@ -1134,7 +1134,7 @@ def big_merged_data_eda():
 
     """
 
-    #"""
+    """
     # AI
 
     # Train and Evaluate with all features - CPU
@@ -1198,7 +1198,7 @@ def big_merged_data_eda():
     #   median	0.2653    0.2653    0.2653    0.2653    		0.7413    0.7512    0.9782    0.8502    
     #   std	    0.0018    0.0018    0.0018    0.0018    		0.0014    0.0014    0.0009    0.0009    
         
-    #"""
+    """
 
     # CPU Random Forest Classifier with grid search
     # Use f1 as scoring metric
@@ -1206,6 +1206,7 @@ def big_merged_data_eda():
     param_grid = {
         "n_estimators": [50, 100, 200, 500],  # default 100
         "criterion": ["gini", "entropy", "log_loss"],  # default "gini"
+        "max_depth": [None, 5, 10, 20],  # default None
         "min_samples_split": [2, 5, 10],  # default 2
         "min_samples_leaf": [1, 2, 5],  # default 1
         "max_features": [None, "sqrt", "log2"],  # default "sqrt"
@@ -1214,14 +1215,14 @@ def big_merged_data_eda():
     }
 
     # Train and Evaluate with all features - CPU
-
+    print("Train and Evaluate with all features - CPU - multiclass")
     metrics, _ = train_and_evaluate(
-       merged_big_data_cpu,
-       "cpufailures",
-       RandomForestClassifier(),
-       binary=False,
-       grid_search=True,
-       param_grid=param_grid,
+        merged_big_data_cpu,
+        "cpufailures",
+        RandomForestClassifier(),
+        binary=False,
+        grid_search=True,
+        param_grid=param_grid,
     )
 
     """
@@ -1284,13 +1285,14 @@ def big_merged_data_eda():
     """
 
     # binary classification
+    print("Train and Evaluate with all features - CPU - binary")
     metrics_bin, _ = train_and_evaluate(
-       merged_big_data_cpu,
-       "cpufailures",
-       RandomForestClassifier(),
-       binary=True,
-       grid_search=True,
-       param_grid=param_grid,
+        merged_big_data_cpu,
+        "cpufailures",
+        RandomForestClassifier(),
+        binary=True,
+        grid_search=True,
+        param_grid=param_grid,
     )
 
     #   Grid search time: 5368.719045162201
@@ -1344,6 +1346,7 @@ def big_merged_data_eda():
     # RAAAAAAAAAAM
 
     # Train and Evaluate with all features - RAM
+    print("Train and Evaluate with all features - RAM - multiclass")
     metrics_bin, _ = train_and_evaluate(
         merged_big_data_ram,
         "ramfailures",
@@ -1410,6 +1413,7 @@ def big_merged_data_eda():
     #   weighted avg       0.79      0.78      0.79     26945
 
     # binary classification
+    print("Train and Evaluate with all features - RAM - binary")
     metrics_bin, _ = train_and_evaluate(
         merged_big_data_ram,
         "ramfailures",
@@ -1549,6 +1553,9 @@ def train_and_evaluate(
         Tuple with the best predicted values and respective f1 score
     """
 
+    # create a copy of the data
+    data = data.copy()
+
     if binary:
         data[y_col] = data[y_col].apply(lambda x: 1 if x > 0 else 0)
 
@@ -1574,14 +1581,25 @@ def train_and_evaluate(
 
         t = time.time()
 
-        grid = GridSearchCV(model, param_grid, verbose=2, n_jobs=-1)
+        grid = GridSearchCV(
+            model,
+            param_grid,
+            n_jobs=-1,
+            cv=5,
+            refit=True,
+            return_train_score=True,
+        )
 
         grid.fit(x_train, y_train)
 
-        print(f"Grid search time: {time.time() - t}")
+        print(f"Grid search time: {time.time() - t:.2f} seconds for {len(grid.cv_results_['params'])} candidates parameter settings.")
 
         print(grid.best_params_)
         print(grid.best_estimator_)
+
+        # save results
+        results = pd.DataFrame(grid.cv_results_)
+        results.to_csv(f"AI/balanced_tree/1000i_1.0fr_15ft_5rt_5fit_hosts024681012_acc_cr/grid_search_{y_col}_{'bin' if binary else 'multi'}_acc.csv", index=False)
 
         # evaluate train data and test data
 
@@ -1603,17 +1621,23 @@ def train_and_evaluate(
         grid = GridSearchCV(
             model,
             param_grid,
-            verbose=2,
-            n_jobs=-1,
             scoring=make_scorer(f1_score, average="binary" if binary else "macro"),
+            n_jobs=-1,
+            cv=5,
+            refit=True,
+            return_train_score=True,
         )
 
         grid.fit(x_train, y_train)
 
-        print(f"Grid search f1 : {time.time() - t}")
+        print(f"Grid search f1 time: {time.time() - t:.2f} seconds for {len(grid.cv_results_['params'])} candidates parameter settings.")
 
         print(grid.best_params_)
         print(grid.best_estimator_)
+
+        # save results
+        results = pd.DataFrame(grid.cv_results_)
+        results.to_csv(f"AI/balanced_tree/1000i_1.0fr_15ft_5rt_5fit_hosts024681012_acc_cr/grid_search_{y_col}_{'bin' if binary else 'multi'}_f1.csv", index=False)
 
         # evaluate train data and test data
 

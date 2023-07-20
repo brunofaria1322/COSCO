@@ -51,6 +51,9 @@ class MyFog:
 
     def generateHosts(self):
         # Linear SFC
+        if self.num_hosts != 6:
+            raise Exception("MyTreeFog supports only 6 hosts")
+        
         hosts = []
         keys = list(self.types)
         
