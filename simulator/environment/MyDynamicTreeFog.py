@@ -126,7 +126,7 @@ class MyFog:
         )
         plt.axis("off")
         plt.tight_layout()
-        """
+        
         plt.legend(
             handles=[
                 patches.Patch(color=colors[1], label="Host"),
@@ -134,7 +134,7 @@ class MyFog:
             ],
             prop={"size": 10, "weight": "bold"},
         )
-        """
+        
         plt.xlim(-n_edge, n_edge)
 
         plt.savefig("tree.png")
