@@ -225,12 +225,16 @@ class MyFog:
             hosts.append(f_replica)
             hosts_counter += 2
 
+            fog_ips = f_host[0]
+            fog_max_children = fog_ips//(3*2048)
+            # minimum max children supported by a fog is 4 and maximum is 10
+
             # Edge
             remaining_hosts -=2
             if remaining_hosts < 6:
                 n_edge = remaining_hosts//2
             else:
-                n_edge = random.randint(1, min(5,remaining_hosts//2))
+                n_edge = random.randint(1, min(fog_max_children,remaining_hosts//2))
 
             print(n_edge)
 
@@ -255,5 +259,5 @@ class MyFog:
                 
 
         self.plotTree(hosts)
-        exit()
+        
         return hosts

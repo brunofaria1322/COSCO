@@ -13,7 +13,8 @@ from simulator.Simulator import *
 from simulator.environment.MyDynamicTreeFog import *
 
 # from simulator.workload.MyBitbrainWorkload import *
-from simulator.workload.MyAzure2019Workload import *
+# from simulator.workload.MyAzure2019Workload import *
+from simulator.workload.MyAzure2019Workload_NoCloud import *
 
 # Scheduler imports
 from scheduler.zMyScheduler import MyScheduler
@@ -27,9 +28,9 @@ usage = "usage: python main.py"
 
 
 # Global constants
-NUM_SIM_STEPS = 1000
+NUM_SIM_STEPS = 100
 # HOSTS = 10 * 5 if opts.env == '' else 10
-HOSTS = 15 * 2
+HOSTS = 50 * 2
 
 CONTAINERS = HOSTS * 10
 FAILURES = HOSTS * 10

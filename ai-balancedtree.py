@@ -1226,62 +1226,34 @@ def big_merged_data_eda():
     )
 
     """
-    #   Grid search time: 35103.148278713226
-    #   {'bootstrap': True, 'criterion': 'entropy', 'max_features': None, 'min_samples_leaf': 5, 'min_samples_split': 10, 'n_estimators': 500, 'n_jobs': -1}
-    #   RandomForestClassifier(criterion='entropy', max_features=None,
-    #                          min_samples_leaf=5, min_samples_split=10,
+    #   Grid search time: 218295.45 seconds for 2592 candidates parameter settings.
+    #   {'bootstrap': True, 'criterion': 'log_loss', 'max_depth': 20, 'max_features': 'log2', 'min_samples_leaf': 5, 'min_samples_split': 5, 'n_estimators': 500, 'n_jobs': -1}
+    #   RandomForestClassifier(criterion='log_loss', max_depth=20, max_features='log2',
+    #                          min_samples_leaf=5, min_samples_split=5,
     #                          n_estimators=500, n_jobs=-1)
     #   Train data
     #                 precision    recall  f1-score   support
     #   
-    #              0       0.97      0.99      0.98     55433
-    #              1       0.86      0.67      0.75      5901
-    #              2       0.85      0.76      0.80      1392
-    #              3       0.88      0.43      0.58       141
+    #              0       0.88      0.91      0.90     36731
+    #              1       0.79      0.76      0.77     36780
+    #              2       0.76      0.71      0.74     36702
+    #              3       0.81      0.88      0.84     36785
     #   
-    #       accuracy                           0.96     62867
-    #      macro avg       0.89      0.71      0.78     62867
-    #   weighted avg       0.95      0.96      0.95     62867
-    #   
-    #   Test data
-    #                 precision    recall  f1-score   support
-    #   
-    #              0       0.96      0.99      0.97     23740
-    #              1       0.73      0.58      0.64      2545
-    #              2       0.68      0.59      0.63       598
-    #              3       0.71      0.28      0.40        61
-    #   
-    #       accuracy                           0.94     26944
-    #      macro avg       0.77      0.61      0.66     26944
-    #   weighted avg       0.93      0.94      0.93     26944
-    
-    #   Grid search f1
-    #   {'bootstrap': True, 'criterion': 'entropy', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 10, 'n_estimators': 200, 'n_jobs': -1}
-    #   RandomForestClassifier(criterion='entropy', max_features=None,
-    #                          min_samples_split=10, n_estimators=200, n_jobs=-1)
-    #   Train data
-    #                 precision    recall  f1-score   support
-    #   
-    #              0       0.98      1.00      0.99     55433
-    #              1       0.91      0.76      0.83      5901
-    #              2       0.90      0.82      0.86      1392
-    #              3       0.89      0.63      0.74       141
-    #   
-    #       accuracy                           0.97     62867
-    #      macro avg       0.92      0.80      0.85     62867
-    #   weighted avg       0.97      0.97      0.97     62867
+    #       accuracy                           0.81    146998
+    #      macro avg       0.81      0.81      0.81    146998
+    #   weighted avg       0.81      0.81      0.81    146998
     #   
     #   Test data
     #                 precision    recall  f1-score   support
     #   
-    #              0       0.96      0.98      0.97     23740
-    #              1       0.71      0.58      0.64      2545
-    #              2       0.69      0.59      0.64       598
-    #              3       0.74      0.46      0.57        61
+    #              0       0.80      0.84      0.82     15770
+    #              1       0.61      0.58      0.60     15717
+    #              2       0.55      0.50      0.53     15798
+    #              3       0.71      0.77      0.74     15715
     #   
-    #       accuracy                           0.94     26944
-    #      macro avg       0.78      0.65      0.70     26944
-    #   weighted avg       0.93      0.94      0.93     26944
+    #       accuracy                           0.68     63000
+    #      macro avg       0.67      0.68      0.67     63000
+    #   weighted avg       0.67      0.68      0.67     63000
     """
 
     # binary classification
@@ -1295,53 +1267,7 @@ def big_merged_data_eda():
         param_grid=param_grid,
     )
 
-    #   Grid search time: 5368.719045162201
-    #   {'criterion': 'gini', 'max_features': 'sqrt', 'min_samples_leaf': 5, 'min_samples_split': 10, 'n_estimators': 100, 'n_jobs': -1}
-    #   RandomForestClassifier(min_samples_leaf=5, min_samples_split=10, n_jobs=-1)
-    #   Train data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.97      0.99      0.98     55401
-    #              1       0.93      0.74      0.82      7466
-    #
-    #       accuracy                           0.96     62867
-    #      macro avg       0.95      0.87      0.90     62867
-    #   weighted avg       0.96      0.96      0.96     62867
-    #
-    #   Test data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.96      0.99      0.97     23772
-    #              1       0.87      0.67      0.76      3172
-    #
-    #       accuracy                           0.95     26944
-    #      macro avg       0.91      0.83      0.86     26944
-    #   weighted avg       0.95      0.95      0.95     26944
-
-    #   Grid search f1 : 5386.9168066978455
-    #   {'criterion': 'log_loss', 'max_features': None, 'min_samples_leaf': 5, 'min_samples_split': 5, 'n_estimators': 500, 'n_jobs': -1}
-    #   RandomForestClassifier(criterion='log_loss', max_features=None,
-    #                          min_samples_leaf=5, min_samples_split=5,
-    #                          n_estimators=500, n_jobs=-1)
-    #   Train data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.97      0.99      0.98     55401
-    #              1       0.93      0.76      0.84      7466
-    #
-    #       accuracy                           0.96     62867
-    #      macro avg       0.95      0.88      0.91     62867
-    #   weighted avg       0.96      0.96      0.96     62867
-    #
-    #   Test data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.96      0.98      0.97     23772
-    #              1       0.86      0.69      0.77      3172
-    #
-    #       accuracy                           0.95     26944
-    #      macro avg       0.91      0.84      0.87     26944
-    #   weighted avg       0.95      0.95      0.95     26944
+    #   Grid search time: xxx
 
     # RAAAAAAAAAAM
 
@@ -1356,61 +1282,7 @@ def big_merged_data_eda():
         param_grid=param_grid,
     )
 
-    #   Grid search time: 53953.81897568703
-    #   {'bootstrap': True, 'criterion': 'log_loss', 'max_features': 'sqrt', 'min_samples_leaf': 2, 'min_samples_split': 10, 'n_estimators': 200, 'n_jobs': -1}
-    #   RandomForestClassifier(criterion='log_loss', min_samples_leaf=2,
-    #                          min_samples_split=10, n_estimators=200, n_jobs=-1)
-    #   Train data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.88      1.00      0.94     55419
-    #              1       1.00      0.04      0.07      5923
-    #              2       0.00      0.00      0.00      1393
-    #              3       0.00      0.00      0.00       136
-    #
-    #       accuracy                           0.88     62871
-    #      macro avg       0.47      0.26      0.25     62871
-    #   weighted avg       0.87      0.88      0.83     62871
-    #
-    #   Test data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.88      1.00      0.94     23757
-    #              1       0.00      0.00      0.00      2533
-    #              2       0.00      0.00      0.00       609
-    #              3       0.00      0.00      0.00        46
-    #
-    #       accuracy                           0.88     26945
-    #      macro avg       0.22      0.25      0.23     26945
-    #   weighted avg       0.78      0.88      0.83     26945
-
-    #   Grid search f1 : 53972.76392650604
-    #   {'bootstrap': False, 'criterion': 'entropy', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 100, 'n_jobs': -1}
-    #   RandomForestClassifier(bootstrap=False, criterion='entropy', max_features=None,
-    #                          n_jobs=-1)
-    #   Train data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       1.00      1.00      1.00     55419
-    #              1       1.00      1.00      1.00      5923
-    #              2       1.00      1.00      1.00      1393
-    #              3       1.00      1.00      1.00       136
-    #
-    #       accuracy                           1.00     62871
-    #      macro avg       1.00      1.00      1.00     62871
-    #   weighted avg       1.00      1.00      1.00     62871
-    #
-    #   Test data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.88      0.88      0.88     23757
-    #              1       0.11      0.11      0.11      2533
-    #              2       0.02      0.02      0.02       609
-    #              3       0.02      0.02      0.02        46
-    #
-    #       accuracy                           0.78     26945
-    #      macro avg       0.26      0.26      0.26     26945
-    #   weighted avg       0.79      0.78      0.79     26945
+    #   Grid search time: xxx
 
     # binary classification
     print("Train and Evaluate with all features - RAM - binary")
@@ -1423,53 +1295,7 @@ def big_merged_data_eda():
         param_grid=param_grid,
     )
 
-    #   Grid search time: 56693.08396792412
-    #   {'bootstrap': True, 'criterion': 'entropy', 'max_features': 'sqrt', 'min_samples_leaf': 5, 'min_samples_split': 2, 'n_estimators': 200, 'n_jobs': -1}
-    #   RandomForestClassifier(criterion='entropy', min_samples_leaf=5,
-    #                          n_estimators=200, n_jobs=-1)
-    #   Train data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.88      1.00      0.94     55431
-    #              1       1.00      0.01      0.01      7440
-    #
-    #       accuracy                           0.88     62871
-    #      macro avg       0.94      0.50      0.48     62871
-    #   weighted avg       0.90      0.88      0.83     62871
-    #
-    #   Test data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.88      1.00      0.94     23745
-    #              1       0.00      0.00      0.00      3200
-    #
-    #       accuracy                           0.88     26945
-    #      macro avg       0.44      0.50      0.47     26945
-    #   weighted avg       0.78      0.88      0.83     26945
-
-    #   Grid search f1 : 56717.54580140114
-    #   {'bootstrap': False, 'criterion': 'log_loss', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 2, 'n_estimators': 50, 'n_jobs': -1}
-    #   RandomForestClassifier(bootstrap=False, criterion='log_loss', max_features=None,
-    #                          n_estimators=50, n_jobs=-1)
-    #   Train data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       1.00      1.00      1.00     55431
-    #              1       1.00      1.00      1.00      7440
-    #
-    #       accuracy                           1.00     62871
-    #      macro avg       1.00      1.00      1.00     62871
-    #   weighted avg       1.00      1.00      1.00     62871
-    #
-    #   Test data
-    #                 precision    recall  f1-score   support
-    #
-    #              0       0.88      0.88      0.88     23745
-    #              1       0.12      0.13      0.12      3200
-    #
-    #       accuracy                           0.79     26945
-    #      macro avg       0.50      0.50      0.50     26945
-    #   weighted avg       0.79      0.79      0.79     26945
+    #   Grid search time: xxx
 
 
 def test():
