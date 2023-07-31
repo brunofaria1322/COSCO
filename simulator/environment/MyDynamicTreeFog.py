@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 class MyFog:
     def __init__(self, num_hosts):
-        ips_multiplier = 2048
+        ips_multiplier = 2054
         gib_multiplier = 1024
         self.num_hosts = num_hosts
 

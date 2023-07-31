@@ -1,0 +1,491 @@
+nohup: ignoring input
+Performing EDA on edge_cpu_data
+(1111110, 7)
+
+---- INFO ----
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1111110 entries, 0 to 1111109
+Data columns (total 7 columns):
+ #   Column         Non-Null Count    Dtype  
+---  ------         --------------    -----  
+ 0   cpu            1111110 non-null  float64
+ 1   numcontainers  1111110 non-null  int64  
+ 2   baseips        1111110 non-null  float64
+ 3   ipsavailable   1111110 non-null  float64
+ 4   ipscap         1111110 non-null  float64
+ 5   apparentips    1111110 non-null  float64
+ 6   cpufailures    1111110 non-null  int64  
+dtypes: float64(5), int64(2)
+memory usage: 59.3 MB
+None
+
+---- DESCRIPTION ----
+                cpu  numcontainers  ...   apparentips   cpufailures
+count  1.111110e+06   1.111110e+06  ...  1.111110e+06  1.111110e+06
+mean   2.715505e+01   7.540316e+00  ...  1.216013e+03  1.498501e+00
+std    1.523571e+01   2.429053e+00  ...  4.375896e+02  1.118480e+00
+min    0.000000e+00   1.000000e+00  ...  0.000000e+00  0.000000e+00
+25%    1.637435e+01   6.000000e+00  ...  8.970000e+02  0.000000e+00
+50%    2.333448e+01   7.000000e+00  ...  1.192000e+03  1.000000e+00
+75%    3.414840e+01   9.000000e+00  ...  1.502000e+03  2.000000e+00
+max    1.000000e+02   3.200000e+01  ...  3.871000e+03  3.000000e+00
+
+[8 rows x 7 columns]
+
+---- DUPLICATES: 0
+
+---- MISSING VALUES:
+cpu              0
+numcontainers    0
+baseips          0
+ipsavailable     0
+ipscap           0
+apparentips      0
+cpufailures      0
+dtype: int64
+
+---- FAILURES ----
+0    278610
+3    277500
+2    277500
+1    277500
+Name: cpufailures, dtype: int64
+
+---- SELECT K BEST FEATURES ----
+
+	-- ANOVA --
+           Specs          Score
+5    apparentips  294895.352890
+0            cpu   81898.855102
+1  numcontainers      17.805003
+2        baseips       7.623977
+3   ipsavailable       0.107702
+4         ipscap       0.000000
+
+---- FEATURE IMPORTANCE ----
+[0.19619823 0.13177117 0.14674999 0.13068802 0.11143488 0.28315771]
+apparentips      0.283158
+cpu              0.196198
+baseips          0.146750
+numcontainers    0.131771
+ipsavailable     0.130688
+ipscap           0.111435
+dtype: float64
+
+---- PCA ----
+[0.96040165 0.03304117]
+
+---- TSNE ----
+Performing EDA on fog_cpu_data
+(390390, 7)
+
+---- INFO ----
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 390390 entries, 0 to 390389
+Data columns (total 7 columns):
+ #   Column         Non-Null Count   Dtype  
+---  ------         --------------   -----  
+ 0   cpu            390390 non-null  float64
+ 1   numcontainers  390390 non-null  int64  
+ 2   baseips        390390 non-null  float64
+ 3   ipsavailable   390390 non-null  float64
+ 4   ipscap         390390 non-null  float64
+ 5   apparentips    390390 non-null  float64
+ 6   cpufailures    390390 non-null  int64  
+dtypes: float64(5), int64(2)
+memory usage: 20.8 MB
+None
+
+---- DESCRIPTION ----
+                 cpu  numcontainers  ...    apparentips    cpufailures
+count  390390.000000  390390.000000  ...  390390.000000  390390.000000
+mean       29.358324      20.357046  ...    9486.276716       1.498501
+std        13.619626      10.928554  ...    4519.553770       1.118481
+min         0.000000       0.000000  ...       0.000000       0.000000
+25%        18.338207      11.000000  ...    5899.000000       0.000000
+50%        28.432051      19.000000  ...    9039.000000       1.000000
+75%        39.404141      28.000000  ...   12656.000000       2.000000
+max        87.750448      69.000000  ...   29475.000000       3.000000
+
+[8 rows x 7 columns]
+
+---- DUPLICATES: 541
+
+---- MISSING VALUES:
+cpu              0
+numcontainers    0
+baseips          0
+ipsavailable     0
+ipscap           0
+apparentips      0
+cpufailures      0
+dtype: int64
+
+---- FAILURES ----
+3    97500
+2    97500
+1    97500
+0    97349
+Name: cpufailures, dtype: int64
+
+---- SELECT K BEST FEATURES ----
+
+	-- ANOVA --
+           Specs        Score
+0            cpu  9021.217035
+5    apparentips  8269.314980
+2        baseips     4.642704
+1  numcontainers     4.211544
+3   ipsavailable     1.278687
+4         ipscap     0.002347
+
+---- FEATURE IMPORTANCE ----
+[0.18500568 0.23302308 0.13711688 0.12122208 0.10040547 0.22322681]
+numcontainers    0.233023
+apparentips      0.223227
+cpu              0.185006
+baseips          0.137117
+ipsavailable     0.121222
+ipscap           0.100405
+dtype: float64
+
+---- PCA ----
+[0.59639541 0.3898715 ]
+
+---- TSNE ----
+Performing EDA on all_cpu_data
+(1501500, 7)
+
+---- INFO ----
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1501500 entries, 0 to 1501499
+Data columns (total 7 columns):
+ #   Column         Non-Null Count    Dtype  
+---  ------         --------------    -----  
+ 0   cpu            1501500 non-null  float64
+ 1   numcontainers  1501500 non-null  int64  
+ 2   baseips        1501500 non-null  float64
+ 3   ipsavailable   1501500 non-null  float64
+ 4   ipscap         1501500 non-null  float64
+ 5   apparentips    1501500 non-null  float64
+ 6   cpufailures    1501500 non-null  int64  
+dtypes: float64(5), int64(2)
+memory usage: 80.2 MB
+None
+
+---- DESCRIPTION ----
+                cpu  numcontainers  ...   apparentips   cpufailures
+count  1.501500e+06   1.501500e+06  ...  1.501500e+06  1.501500e+06
+mean   2.772790e+01   1.087267e+01  ...  3.366281e+03  1.498501e+00
+std    1.486392e+01   8.186825e+00  ...  4.314184e+03  1.118480e+00
+min    0.000000e+00   0.000000e+00  ...  0.000000e+00  0.000000e+00
+25%    1.676359e+01   6.000000e+00  ...  1.005000e+03  0.000000e+00
+50%    2.441502e+01   8.000000e+00  ...  1.398000e+03  1.000000e+00
+75%    3.593281e+01   1.100000e+01  ...  2.787000e+03  2.000000e+00
+max    1.000000e+02   6.900000e+01  ...  2.947500e+04  3.000000e+00
+
+[8 rows x 7 columns]
+
+---- DUPLICATES: 541
+
+---- MISSING VALUES:
+cpu              0
+numcontainers    0
+baseips          0
+ipsavailable     0
+ipscap           0
+apparentips      0
+cpufailures      0
+dtype: int64
+
+---- FAILURES ----
+0    375959
+3    375000
+2    375000
+1    375000
+Name: cpufailures, dtype: int64
+
+---- SELECT K BEST FEATURES ----
+
+	-- ANOVA --
+           Specs         Score
+0            cpu  86334.344497
+5    apparentips   6949.656512
+1  numcontainers      8.384801
+2        baseips      4.052574
+4         ipscap      0.510773
+3   ipsavailable      0.220187
+
+---- FEATURE IMPORTANCE ----
+[0.20680651 0.15046234 0.14301606 0.13879336 0.11698249 0.24393925]
+apparentips      0.243939
+cpu              0.206807
+numcontainers    0.150462
+baseips          0.143016
+ipsavailable     0.138793
+ipscap           0.116982
+dtype: float64
+
+---- PCA ----
+[0.97039338 0.02858704]
+
+---- TSNE ----
+Performing EDA on edge_ram_data
+(1111110, 9)
+
+---- INFO ----
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1111110 entries, 0 to 1111109
+Data columns (total 9 columns):
+ #   Column          Non-Null Count    Dtype  
+---  ------          --------------    -----  
+ 0   ram             1111110 non-null  float64
+ 1   numcontainers   1111110 non-null  int64  
+ 2   ram_s           1111110 non-null  float64
+ 3   ram_r           1111110 non-null  float64
+ 4   ram_w           1111110 non-null  float64
+ 5   ramavailable_s  1111110 non-null  float64
+ 6   ramavailable_r  1111110 non-null  float64
+ 7   ramavailable_w  1111110 non-null  float64
+ 8   ramfailures     1111110 non-null  int64  
+dtypes: float64(7), int64(2)
+memory usage: 76.3 MB
+None
+
+---- DESCRIPTION ----
+                ram  numcontainers  ...  ramavailable_w   ramfailures
+count  1.111110e+06   1.111110e+06  ...    1.111110e+06  1.111110e+06
+mean   5.607036e+00   7.540316e+00  ...    1.998907e+02  1.498501e+00
+std    3.836120e+00   2.429053e+00  ...    2.396418e-01  1.118480e+00
+min    3.342971e-02   1.000000e+00  ...    1.955831e+02  0.000000e+00
+25%    2.945364e+00   6.000000e+00  ...    1.999280e+02  0.000000e+00
+50%    4.638015e+00   7.000000e+00  ...    1.999795e+02  1.000000e+00
+75%    7.192623e+00   9.000000e+00  ...    1.999933e+02  2.000000e+00
+max    4.770313e+01   3.200000e+01  ...    2.000000e+02  3.000000e+00
+
+[8 rows x 9 columns]
+
+---- DUPLICATES: 0
+
+---- MISSING VALUES:
+ram               0
+numcontainers     0
+ram_s             0
+ram_r             0
+ram_w             0
+ramavailable_s    0
+ramavailable_r    0
+ramavailable_w    0
+ramfailures       0
+dtype: int64
+
+---- FAILURES ----
+0    278610
+3    277500
+2    277500
+1    277500
+Name: ramfailures, dtype: int64
+
+---- SELECT K BEST FEATURES ----
+
+	-- ANOVA --
+            Specs      Score
+2           ram_s  17.860071
+1   numcontainers  17.805003
+0             ram  10.713450
+7  ramavailable_w   1.853852
+4           ram_w   1.853828
+6  ramavailable_r   1.716779
+3           ram_r   1.716581
+5  ramavailable_s   0.084335
+
+---- FEATURE IMPORTANCE ----
+[0.1491811  0.06263197 0.14951026 0.12254681 0.12149987 0.15059889
+ 0.12250665 0.12152445]
+ramavailable_s    0.150599
+ram_s             0.149510
+ram               0.149181
+ram_r             0.122547
+ramavailable_r    0.122507
+ramavailable_w    0.121524
+ram_w             0.121500
+numcontainers     0.062632
+dtype: float64
+
+---- PCA ----
+[0.9953195  0.00467878]
+
+---- TSNE ----
+Performing EDA on fog_ram_data
+(390390, 9)
+
+---- INFO ----
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 390390 entries, 0 to 390389
+Data columns (total 9 columns):
+ #   Column          Non-Null Count   Dtype  
+---  ------          --------------   -----  
+ 0   ram             390390 non-null  float64
+ 1   numcontainers   390390 non-null  int64  
+ 2   ram_s           390390 non-null  float64
+ 3   ram_r           390390 non-null  float64
+ 4   ram_w           390390 non-null  float64
+ 5   ramavailable_s  390390 non-null  float64
+ 6   ramavailable_r  390390 non-null  float64
+ 7   ramavailable_w  390390 non-null  float64
+ 8   ramfailures     390390 non-null  int64  
+dtypes: float64(7), int64(2)
+memory usage: 26.8 MB
+None
+
+---- DESCRIPTION ----
+                 ram  numcontainers  ...  ramavailable_w    ramfailures
+count  390390.000000  390390.000000  ...   390390.000000  390390.000000
+mean        2.719295      20.357046  ...      300.465301       1.498501
+std         1.946746      10.928554  ...        9.383113       1.118481
+min         0.000000       0.000000  ...      207.399733       0.000000
+25%         1.201241      11.000000  ...      303.890733       0.000000
+50%         2.338239      19.000000  ...      304.725067       1.000000
+75%         3.810385      28.000000  ...      304.931333       2.000000
+max        18.197686      69.000000  ...      305.000000       3.000000
+
+[8 rows x 9 columns]
+
+---- DUPLICATES: 536
+
+---- MISSING VALUES:
+ram               0
+numcontainers     0
+ram_s             0
+ram_r             0
+ram_w             0
+ramavailable_s    0
+ramavailable_r    0
+ramavailable_w    0
+ramfailures       0
+dtype: int64
+
+---- FAILURES ----
+3    97500
+2    97500
+1    97500
+0    97354
+Name: ramfailures, dtype: int64
+
+---- SELECT K BEST FEATURES ----
+
+	-- ANOVA --
+            Specs     Score
+0             ram  6.031209
+2           ram_s  5.749379
+1   numcontainers  4.262759
+7  ramavailable_w  0.864394
+4           ram_w  0.864394
+6  ramavailable_r  0.525160
+3           ram_r  0.525160
+5  ramavailable_s  0.079699
+
+---- FEATURE IMPORTANCE ----
+[0.13002067 0.10407743 0.13007055 0.1260182  0.12535294 0.1330958
+ 0.12600535 0.12535905]
+ramavailable_s    0.133096
+ram_s             0.130071
+ram               0.130021
+ram_r             0.126018
+ramavailable_r    0.126005
+ramavailable_w    0.125359
+ram_w             0.125353
+numcontainers     0.104077
+dtype: float64
+
+---- PCA ----
+[0.98455995 0.01543559]
+
+---- TSNE ----
+Performing EDA on all_ram_data
+(1501500, 9)
+
+---- INFO ----
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1501500 entries, 0 to 1501499
+Data columns (total 9 columns):
+ #   Column          Non-Null Count    Dtype  
+---  ------          --------------    -----  
+ 0   ram             1501500 non-null  float64
+ 1   numcontainers   1501500 non-null  int64  
+ 2   ram_s           1501500 non-null  float64
+ 3   ram_r           1501500 non-null  float64
+ 4   ram_w           1501500 non-null  float64
+ 5   ramavailable_s  1501500 non-null  float64
+ 6   ramavailable_r  1501500 non-null  float64
+ 7   ramavailable_w  1501500 non-null  float64
+ 8   ramfailures     1501500 non-null  int64  
+dtypes: float64(7), int64(2)
+memory usage: 103.1 MB
+None
+
+---- DESCRIPTION ----
+                ram  numcontainers  ...  ramavailable_w   ramfailures
+count  1.501500e+06   1.501500e+06  ...    1.501500e+06  1.501500e+06
+mean   4.856223e+00   1.087267e+01  ...    2.260401e+02  1.498501e+00
+std    3.671442e+00   8.186825e+00  ...    4.437464e+01  1.118480e+00
+min    0.000000e+00   0.000000e+00  ...    1.955831e+02  0.000000e+00
+25%    2.348463e+00   6.000000e+00  ...    1.999588e+02  0.000000e+00
+50%    3.958096e+00   8.000000e+00  ...    1.999905e+02  1.000000e+00
+75%    6.300376e+00   1.100000e+01  ...    2.803200e+02  2.000000e+00
+max    4.770313e+01   6.900000e+01  ...    3.050000e+02  3.000000e+00
+
+[8 rows x 9 columns]
+
+---- DUPLICATES: 536
+
+---- MISSING VALUES:
+ram               0
+numcontainers     0
+ram_s             0
+ram_r             0
+ram_w             0
+ramavailable_s    0
+ramavailable_r    0
+ramavailable_w    0
+ramfailures       0
+dtype: int64
+
+---- FAILURES ----
+0    375964
+3    375000
+2    375000
+1    375000
+Name: ramfailures, dtype: int64
+
+---- SELECT K BEST FEATURES ----
+
+	-- ANOVA --
+            Specs      Score
+0             ram  11.659940
+1   numcontainers   8.413191
+2           ram_s   6.558805
+4           ram_w   1.051214
+7  ramavailable_w   0.486685
+6  ramavailable_r   0.454902
+5  ramavailable_s   0.454813
+3           ram_r   0.453413
+
+---- FEATURE IMPORTANCE ----
+[0.14322153 0.07136826 0.14342786 0.12473527 0.12376783 0.1450032
+ 0.12468543 0.12379061]
+ramavailable_s    0.145003
+ram_s             0.143428
+ram               0.143222
+ram_r             0.124735
+ramavailable_r    0.124685
+ramavailable_w    0.123791
+ram_w             0.123768
+numcontainers     0.071368
+dtype: float64
+
+---- PCA ----
+[9.99381938e-01 6.17781069e-04]
+
+---- TSNE ----
+Total time taken: 86522.0240073204

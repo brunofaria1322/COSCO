@@ -1,0 +1,178 @@
+nohup: ignoring input
+AI for edge_cpu_data
+AI for normal data
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.6794    0.6756    0.6793    0.6771    		0.9157    0.9456    0.9416    0.9436    
+        median	0.6793    0.6755    0.6792    0.6770    		0.9157    0.9456    0.9416    0.9436    
+        std	0.0007    0.0007    0.0007    0.0007    		0.0004    0.0004    0.0005    0.0003    
+        
+32
+        cpu  numcontainers     baseips  ...  ipscap  apparentips  cpufailures
+0  0.691612              1   36.711572  ...  5639.0         39.0            0
+1  2.860306              1  136.266895  ...  5419.0        155.0            0
+2  6.735361              3  227.714976  ...  3979.0        268.0            0
+3  1.429314              1   21.873100  ...  3848.0         55.0            0
+4  2.850399              2  114.368803  ...  5508.0        157.0            0
+
+[5 rows x 7 columns]
+        cpu  numcontainers   baseips  ...  ipscap  apparentips  cpufailures
+0  0.006916          0.025  0.006510  ...     1.0     0.006916            0
+1  0.028603          0.025  0.025146  ...     1.0     0.028603            0
+2  0.067354          0.075  0.057229  ...     1.0     0.067354            0
+3  0.014293          0.025  0.005684  ...     1.0     0.014293            0
+4  0.028504          0.050  0.020764  ...     1.0     0.028504            0
+
+[5 rows x 7 columns]
+AI for normalised data
+Time taken multiclasse: 2617.61 seconds
+Time taken binary: 2172.97 seconds
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.4968    0.4924    0.4967    0.4934    		0.8550    0.8860    0.9256    0.9054    
+        median	0.4969    0.4924    0.4968    0.4935    		0.8551    0.8861    0.9257    0.9054    
+        std	0.0006    0.0006    0.0006    0.0006    		0.0006    0.0006    0.0005    0.0004    
+        
+AI for normalised data without redundant features
+Time taken multiclasse: 2829.56 seconds
+Time taken binary: 2363.43 seconds
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.4958    0.4915    0.4956    0.4925    		0.8537    0.8853    0.9245    0.9045    
+        median	0.4959    0.4915    0.4957    0.4926    		0.8537    0.8852    0.9244    0.9044    
+        std	0.0007    0.0007    0.0007    0.0007    		0.0005    0.0006    0.0006    0.0003    
+        
+AI for normalised data without redundant features and baseips
+Time taken multiclasse: 2047.90 seconds
+Time taken binary: 1650.78 seconds
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		0.9999    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		0.9999    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.4914    0.4875    0.4912    0.4886    		0.8524    0.8855    0.9223    0.9035    
+        median	0.4913    0.4876    0.4912    0.4886    		0.8526    0.8856    0.9223    0.9036    
+        std	0.0007    0.0007    0.0007    0.0007    		0.0007    0.0007    0.0006    0.0005    
+        
+AI for fog_cpu_data
+AI for normal data
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.6872    0.6826    0.6870    0.6838    		0.9180    0.9447    0.9459    0.9453    
+        median	0.6871    0.6827    0.6872    0.6838    		0.9181    0.9447    0.9458    0.9453    
+        std	0.0012    0.0011    0.0010    0.0011    		0.0007    0.0008    0.0007    0.0004    
+        
+69
+   cpu  numcontainers  baseips  ipsavailable   ipscap  apparentips  cpufailures
+0  0.0              0      0.0       37543.0  37543.0          0.0            0
+1  0.0              0      0.0       35603.0  35603.0          0.0            0
+2  0.0              0      0.0       25917.0  25917.0          0.0            0
+3  0.0              0      0.0       28852.0  28852.0          0.0            0
+4  0.0              0      0.0       29413.0  29413.0          0.0            0
+   cpu  numcontainers  baseips  ipsavailable  ipscap  apparentips  cpufailures
+0  0.0            0.0      0.0           1.0     1.0          0.0            0
+1  0.0            0.0      0.0           1.0     1.0          0.0            0
+2  0.0            0.0      0.0           1.0     1.0          0.0            0
+3  0.0            0.0      0.0           1.0     1.0          0.0            0
+4  0.0            0.0      0.0           1.0     1.0          0.0            0
+AI for normalised data
+Time taken multiclasse: 791.56 seconds
+Time taken binary: 655.59 seconds
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.4805    0.4731    0.4803    0.4759    		0.8299    0.8680    0.9118    0.8893    
+        median	0.4804    0.4730    0.4803    0.4758    		0.8298    0.8681    0.9118    0.8893    
+        std	0.0011    0.0011    0.0010    0.0010    		0.0010    0.0011    0.0011    0.0007    
+        
+AI for normalised data without redundant features
+Time taken multiclasse: 868.53 seconds
+Time taken binary: 725.89 seconds
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.4788    0.4717    0.4787    0.4744    		0.8287    0.8678    0.9101    0.8884    
+        median	0.4790    0.4721    0.4791    0.4749    		0.8288    0.8678    0.9100    0.8884    
+        std	0.0013    0.0013    0.0013    0.0013    		0.0008    0.0011    0.0009    0.0006    
+        
+AI for normalised data without redundant features and baseips
+Time taken multiclasse: 596.84 seconds
+Time taken binary: 477.15 seconds
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.4769    0.4701    0.4767    0.4728    		0.8275    0.8675    0.9085    0.8875    
+        median	0.4769    0.4702    0.4766    0.4728    		0.8275    0.8676    0.9085    0.8876    
+        std	0.0012    0.0011    0.0012    0.0011    		0.0007    0.0008    0.0011    0.0005    
+        
+AI for all_cpu_data
+AI for normal data
+	METRICS ALL FEATURES - TRAIN                    	METRICS ALL FEATURES (binary) - TRAIN           
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        median	1.0000    1.0000    1.0000    1.0000    		1.0000    1.0000    1.0000    1.0000    
+        std	0.0000    0.0000    0.0000    0.0000    		0.0000    0.0000    0.0000    0.0000    
+        
+	METRICS ALL FEATURES - TEST                     	METRICS ALL FEATURES (binary) - TEST            
+        	accuracy  precision recall    f1        		accuracy  precision recall    f1        
+        mean	0.6813    0.6772    0.6812    0.6788    		0.9162    0.9454    0.9427    0.9440    
+        median	0.6815    0.6773    0.6813    0.6789    		0.9162    0.9454    0.9427    0.9440    
+        std	0.0005    0.0005    0.0004    0.0005    		0.0004    0.0005    0.0005    0.0003    
+        
+69
+   cpu  numcontainers  baseips  ipsavailable   ipscap  apparentips  cpufailures
+0  0.0              0      0.0       37543.0  37543.0          0.0            0
+1  0.0              0      0.0       35603.0  35603.0          0.0            0
+2  0.0              0      0.0       25917.0  25917.0          0.0            0
+3  0.0              0      0.0       28852.0  28852.0          0.0            0
+4  0.0              0      0.0       29413.0  29413.0          0.0            0
+   cpu  numcontainers  baseips  ipsavailable  ipscap  apparentips  cpufailures
+0  0.0            0.0      0.0           1.0     1.0          0.0            0
+1  0.0            0.0      0.0           1.0     1.0          0.0            0
+2  0.0            0.0      0.0           1.0     1.0          0.0            0
+3  0.0            0.0      0.0           1.0     1.0          0.0            0
+4  0.0            0.0      0.0           1.0     1.0          0.0            0
+AI for normalised data
+Time taken multiclasse: 3827.94 seconds
