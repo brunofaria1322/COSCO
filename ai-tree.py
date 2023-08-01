@@ -1322,23 +1322,27 @@ def plot_metrics(metrics, name):
 if __name__ == "__main__":
     time_start = time.time()
 
-    # generate_datasets()
-    # print(f"Time taken with generation: {time.time() - time_start}")
+    #generate_datasets()
+    #print(f"Time taken with generation: {time.time() - time_start}")
 
-    # plot_data()
+    #plot_data()
 
     # split into datasets
-    # merge_and_create_datasets()
+    #merge_and_create_datasets()
+
+    
 
     failures = ["cpu", "ram"]
-    failures = ["cpu"]
+    #failures = ["cpu"]
     layers = ["edge", "fog", "all"]
 
     # loop
     for failure in failures:
         for layer in layers:
             # eda(f'{layer}_{failure}_data', failure)
-            # ai_rf(f"{layer}_{failure}_data", failure)
-            ai_rf_norm(f"{layer}_{failure}_data", failure)
+            ai_rf(f"{layer}_{failure}_data", failure)
+            # ai_rf_norm(f"{layer}_{failure}_data", failure)
+
+   
 
     print(f"Total time taken: {time.time() - time_start}")
