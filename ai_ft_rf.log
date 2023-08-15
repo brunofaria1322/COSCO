@@ -1,0 +1,70 @@
+nohup: ignoring input
+AI/tree/1000i_1.0fr_15ft_5rt_5fit_hosts02468101214161820222426283032343638404244464850525456586062646668707274767880828486889092949698_acc_cr/
+AI for edge_cpu_data
+exception calling callback for <Future at 0x7f94530f81c0 state=finished raised TerminatedWorkerError>
+Traceback (most recent call last):
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/externals/loky/_base.py", line 625, in _invoke_callbacks
+    callback(self)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 360, in __call__
+    self.parallel.dispatch_next()
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 797, in dispatch_next
+    if not self.dispatch_one_batch(self._original_iterator):
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 864, in dispatch_one_batch
+    self._dispatch(tasks)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 782, in _dispatch
+    job = self._backend.apply_async(batch, callback=cb)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/_parallel_backends.py", line 531, in apply_async
+    future = self._workers.submit(SafeFunction(func))
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/externals/loky/reusable_executor.py", line 177, in submit
+    return super(_ReusablePoolExecutor, self).submit(
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/externals/loky/process_executor.py", line 1115, in submit
+    raise self._flags.broken
+joblib.externals.loky.process_executor.TerminatedWorkerError: A worker process managed by the executor was unexpectedly terminated. This could be caused by a segmentation fault while calling the function or by an excessive memory usage causing the Operating System to kill the worker.
+
+The exit codes of the workers are {SIGKILL(-9)}
+Traceback (most recent call last):
+  File "/home/bfaria/COSCO/ai-tree.py", line 1393, in <module>
+    ai_rf_ft(f"{layer}_{failure}_data", failure)
+  File "/home/bfaria/COSCO/ai-tree.py", line 1115, in ai_rf_ft
+    _, _, _ = train_and_evaluate(
+  File "/home/bfaria/COSCO/ai-tree.py", line 890, in train_and_evaluate
+    grid.fit(x_train, y_train)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/sklearn/model_selection/_search.py", line 874, in fit
+    self._run_search(evaluate_candidates)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/sklearn/model_selection/_search.py", line 1388, in _run_search
+    evaluate_candidates(ParameterGrid(self.param_grid))
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/sklearn/model_selection/_search.py", line 821, in evaluate_candidates
+    out = parallel(
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/sklearn/utils/parallel.py", line 63, in __call__
+    return super().__call__(iterable_with_config)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 1061, in __call__
+    self.retrieve()
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 938, in retrieve
+    self._output.extend(job.get(timeout=self.timeout))
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/_parallel_backends.py", line 542, in wrap_future_result
+    return future.result(timeout=timeout)
+  File "/usr/lib/python3.8/concurrent/futures/_base.py", line 444, in result
+    return self.__get_result()
+  File "/usr/lib/python3.8/concurrent/futures/_base.py", line 389, in __get_result
+    raise self._exception
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/externals/loky/_base.py", line 625, in _invoke_callbacks
+    callback(self)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 360, in __call__
+    self.parallel.dispatch_next()
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 797, in dispatch_next
+    if not self.dispatch_one_batch(self._original_iterator):
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 864, in dispatch_one_batch
+    self._dispatch(tasks)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/parallel.py", line 782, in _dispatch
+    job = self._backend.apply_async(batch, callback=cb)
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/_parallel_backends.py", line 531, in apply_async
+    future = self._workers.submit(SafeFunction(func))
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/externals/loky/reusable_executor.py", line 177, in submit
+    return super(_ReusablePoolExecutor, self).submit(
+  File "/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/externals/loky/process_executor.py", line 1115, in submit
+    raise self._flags.broken
+joblib.externals.loky.process_executor.TerminatedWorkerError: A worker process managed by the executor was unexpectedly terminated. This could be caused by a segmentation fault while calling the function or by an excessive memory usage causing the Operating System to kill the worker.
+
+The exit codes of the workers are {SIGKILL(-9)}
+/home/bfaria/COSCO/venv/lib/python3.8/site-packages/joblib/externals/loky/backend/resource_tracker.py:318: UserWarning: resource_tracker: There appear to be 32 leaked semlock objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

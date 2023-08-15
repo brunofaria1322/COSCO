@@ -731,7 +731,7 @@ def eda(dataset_name, type_failure):
     print(featureScores.sort_values(by="Score", ascending=False))
 
     """
-    
+
     # FEATURE IMPORTANCE
     print("\n---- FEATURE IMPORTANCE ----")
 
@@ -806,7 +806,14 @@ def eda(dataset_name, type_failure):
 
 
 def train_and_evaluate(
-    data, y_col, model, data_test=None, binary=False, grid_search=False, param_grid=None
+    data,
+    y_col,
+    model,
+    data_test=None,
+    binary=False,
+    grid_search=False,
+    param_grid=None,
+    name=None,
 ):
     """
     Train and evaluate a model using the given data and model
@@ -829,6 +836,9 @@ def train_and_evaluate(
     param_grid : dict, optional
         Dictionary with the parameters to use in grid search, by default None
         When grid_search is True, param_grid must be provided
+    name : str, optional
+        Name of the model, by default None
+        Used to save the results
 
     Returns
     -------
@@ -889,7 +899,7 @@ def train_and_evaluate(
         # save results
         results = pd.DataFrame(grid.cv_results_)
         results.to_csv(
-            f"AI/balanced_tree/1000i_1.0fr_15ft_5rt_5fit_hosts024681012_acc_cr/grid_search_{y_col}_{'bin' if binary else 'multi'}_acc.csv",
+            f"AI/tree/grid_search_{name}_{'bin' if binary else 'multi'}.csv",
             index=False,
         )
 
@@ -906,50 +916,7 @@ def train_and_evaluate(
 
         print(classification_report(y_test, y_pred))
 
-        ## GRID SEARCH WITH F1 SCORING
-
-        t = time.time()
-
-        grid = GridSearchCV(
-            model,
-            param_grid,
-            scoring=make_scorer(f1_score, average="binary" if binary else "macro"),
-            n_jobs=-1,
-            cv=5,
-            refit=True,
-            return_train_score=True,
-        )
-
-        grid.fit(x_train, y_train)
-
-        print(
-            f"Grid search f1 time: {time.time() - t:.2f} seconds for {len(grid.cv_results_['params'])} candidates parameter settings."
-        )
-
-        print(grid.best_params_)
-        print(grid.best_estimator_)
-
-        # save results
-        results = pd.DataFrame(grid.cv_results_)
-        results.to_csv(
-            f"AI/balanced_tree/1000i_1.0fr_15ft_5rt_5fit_hosts024681012_acc_cr/grid_search_{y_col}_{'bin' if binary else 'multi'}_f1.csv",
-            index=False,
-        )
-
-        # evaluate train data and test data
-
-        print("Train data")
-        y_pred = grid.predict(x_train)
-
-        print(classification_report(y_train, y_pred))
-
-        print("Test data")
-
-        y_pred = grid.predict(x_test)
-
-        print(classification_report(y_test, y_pred))
-
-        return None, None
+        return None, None, None
 
     metrics = [[], [], [], []]
     metrics_train = [[], [], [], []]
@@ -978,12 +945,14 @@ def train_and_evaluate(
         # evaluate
         metrics[0].append(accuracy_score(y_test, y_pred))
         metrics_train[0].append(accuracy_score(y_train, y_pred_train))
-        
+
         metrics[1].append(
             precision_score(y_test, y_pred, average="binary" if binary else "macro")
         )
         metrics_train[1].append(
-            precision_score(y_train, y_pred_train, average="binary" if binary else "macro")
+            precision_score(
+                y_train, y_pred_train, average="binary" if binary else "macro"
+            )
         )
 
         metrics[2].append(
@@ -1061,14 +1030,14 @@ def ai_rf(dataset_name, type_failure):
     # attribute types
     data = data.astype(headers)
 
-    metrics, _ = train_and_evaluate(
+    metrics, _, _ = train_and_evaluate(
         data,
         failure_str,
         RandomForestClassifier(n_jobs=-1),
         binary=False,
     )
     # binary classification
-    metrics_bin, _ = train_and_evaluate(
+    metrics_bin, _, _ = train_and_evaluate(
         data,
         failure_str,
         RandomForestClassifier(n_jobs=-1),
@@ -1082,6 +1051,85 @@ def ai_rf(dataset_name, type_failure):
         median\t{np.median(metrics[0]):<10.4f}{np.median(metrics[1]):<10.4f}{np.median(metrics[2]):<10.4f}{np.median(metrics[3]):<10.4f}\t\t{np.median(metrics_bin[0]):<10.4f}{np.median(metrics_bin[1]):<10.4f}{np.median(metrics_bin[2]):<10.4f}{np.median(metrics_bin[3]):<10.4f}
         std\t{np.std(metrics[0]):<10.4f}{np.std(metrics[1]):<10.4f}{np.std(metrics[2]):<10.4f}{np.std(metrics[3]):<10.4f}\t\t{np.std(metrics_bin[0]):<10.4f}{np.std(metrics_bin[1]):<10.4f}{np.std(metrics_bin[2]):<10.4f}{np.std(metrics_bin[3]):<10.4f}
         """
+    )
+
+
+def ai_rf_ft(dataset_name, type_failure):
+    """
+    Run a Grid Search for the Random Forest Classifier for the given dataset and type of failure
+
+    Parameters
+    ----------
+    dataset_name : str
+        Name of the dataset
+    type_failure : str
+        Type of failure to predict (cpu or ram)
+    """
+
+    print(f"AI for {dataset_name}")
+
+    param_grid = {
+        "n_estimators": [50, 100, 200, 500],  # default 100
+        "criterion": ["gini", "entropy", "log_loss"],  # default "gini"
+        "max_depth": [None, 10, 20, 30, 50],  # default None
+        "min_samples_split": [2, 5, 10],  # default 2
+        "max_features": [None],  # default "sqrt"
+        "n_jobs": [-1],
+    }
+
+    headers = None
+    failure_str = None
+    if type_failure == "cpu":
+        headers = {
+            "cpu": float,
+            "numcontainers": int,
+            "baseips": float,
+            "ipsavailable": float,
+            "ipscap": float,
+            "apparentips": float,
+            "cpufailures": int,
+        }
+        failure_str = "cpufailures"
+    elif type_failure == "ram":
+        headers = {
+            "ram": float,
+            "numcontainers": int,
+            "ram_s": float,
+            "ram_r": float,
+            "ram_w": float,
+            "ramavailable_s": float,
+            "ramavailable_r": float,
+            "ramavailable_w": float,
+            "ramfailures": int,
+        }
+        failure_str = "ramfailures"
+    else:
+        raise ValueError("type_failure must be either cpu or ram")
+
+    # load data
+    data = pd.read_csv(f"{DATAPATH}datasets/{type_failure}/{dataset_name}.csv")
+
+    # attribute types
+    data = data.astype(headers)
+
+    _, _, _ = train_and_evaluate(
+        data,
+        failure_str,
+        RandomForestClassifier(),
+        binary=False,
+        grid_search=True,
+        param_grid=param_grid,
+        name=dataset_name,
+    )
+    # binary classification
+    _, _, _ = train_and_evaluate(
+        data,
+        failure_str,
+        RandomForestClassifier(),
+        binary=True,
+        grid_search=True,
+        param_grid=param_grid,
+        name=dataset_name,
     )
 
 
@@ -1166,19 +1214,20 @@ def ai_rf_norm(dataset_name, type_failure):
     # normalise data
     print(data.head())
     data["cpu"] = data["cpu"] / 100
-    data["numcontainers"] = data["numcontainers"] / max(data["numcontainers"])  # max(data["numcontainers"]) -> manually, but should change
+    data["numcontainers"] = data["numcontainers"] / max(
+        data["numcontainers"]
+    )  # max(data["numcontainers"]) -> manually, but should change
     data["baseips"] = data["baseips"] / data["ipscap"]
     data["ipsavailable"] = data["ipsavailable"] / data["ipscap"]
     data["apparentips"] = data["apparentips"] / data["ipscap"]
     data["ipscap"] = data["ipscap"] / data["ipscap"]
     print(data.head())
 
-
     print("AI for normalised data")
     print(data.columns)
 
     time_start = time.time()
-    metrics, _, metrics_train  = train_and_evaluate(
+    metrics, _, metrics_train = train_and_evaluate(
         data,
         failure_str,
         RandomForestClassifier(n_jobs=-1),
@@ -1213,7 +1262,6 @@ def ai_rf_norm(dataset_name, type_failure):
         """
     )
 
-
     # normalised data without redundant features
     print("AI for normalised data without redundant features")
 
@@ -1221,7 +1269,7 @@ def ai_rf_norm(dataset_name, type_failure):
     print(data.columns)
 
     time_start = time.time()
-    metrics, _, metrics_train  = train_and_evaluate(
+    metrics, _, metrics_train = train_and_evaluate(
         data,
         failure_str,
         RandomForestClassifier(n_jobs=-1),
@@ -1263,7 +1311,7 @@ def ai_rf_norm(dataset_name, type_failure):
     data = data.drop(columns=["baseips"])
 
     time_start = time.time()
-    metrics, _, metrics_train  = train_and_evaluate(
+    metrics, _, metrics_train = train_and_evaluate(
         data,
         failure_str,
         RandomForestClassifier(n_jobs=-1),
@@ -1320,29 +1368,29 @@ def plot_metrics(metrics, name):
 
 
 if __name__ == "__main__":
+
+    print(DATAPATH)
+
     time_start = time.time()
 
-    #generate_datasets()
-    #print(f"Time taken with generation: {time.time() - time_start}")
+    # generate_datasets()
+    # print(f"Time taken with generation: {time.time() - time_start}")
 
-    #plot_data()
+    # plot_data()
 
     # split into datasets
-    #merge_and_create_datasets()
-
-    
+    # merge_and_create_datasets()
 
     failures = ["cpu", "ram"]
-    #failures = ["cpu"]
+    # failures = ["cpu"]
     layers = ["edge", "fog", "all"]
 
     # loop
     for failure in failures:
         for layer in layers:
             # eda(f'{layer}_{failure}_data', failure)
-            ai_rf(f"{layer}_{failure}_data", failure)
+            # ai_rf(f"{layer}_{failure}_data", failure)
+            ai_rf_ft(f"{layer}_{failure}_data", failure)
             # ai_rf_norm(f"{layer}_{failure}_data", failure)
-
-   
 
     print(f"Total time taken: {time.time() - time_start}")
