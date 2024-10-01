@@ -8,6 +8,7 @@ import networkx as nx
 from matplotlib import patches
 import matplotlib.pyplot as plt
 
+
 class MyFog:
     def __init__(self, num_hosts):
         ips_multiplier = 2054
@@ -39,7 +40,7 @@ class MyFog:
                 "DiskWrite": 0.619,
                 "BwUp": 2000,
                 "BwDown": 2000,
-            }
+            },
             # removed fog, since it has infinite resources
         }
 
@@ -82,8 +83,8 @@ class MyFog:
         # cloud
         pos[cloud_id] = (0, 0)
 
-        edges = [[host,e] for e,host in enumerate(hosts) if host[5] == 0]
-        #print(edges)
+        edges = [[host, e] for e, host in enumerate(hosts) if host[5] == 0]
+        # print(edges)
         n_edge = len(edges)
 
         # Edge hosts (they are the ones with the highest number of nodes)
@@ -117,7 +118,9 @@ class MyFog:
         node_labels = {i: f"{i}" for i in G.nodes}
         node_labels[cloud_id] = "Cloud"
         colors = ["lightblue", "lightgreen", "lightcoral"]
-        node_colors = [colors[2 if i==cloud_id else 1 if hosts[i][7] else 0] for i in G.nodes]
+        node_colors = [
+            colors[2 if i == cloud_id else 1 if hosts[i][7] else 0] for i in G.nodes
+        ]
         nx.draw_networkx(
             G, pos, with_labels=False, node_size=2000, node_color=node_colors, alpha=0.8
         )
@@ -126,7 +129,7 @@ class MyFog:
         )
         plt.axis("off")
         plt.tight_layout()
-        
+
         plt.legend(
             handles=[
                 patches.Patch(color=colors[1], label="Host"),
@@ -134,7 +137,7 @@ class MyFog:
             ],
             prop={"size": 10, "weight": "bold"},
         )
-        
+
         plt.xlim(-n_edge, n_edge)
 
         plt.savefig("tree.png")
@@ -155,12 +158,8 @@ class MyFog:
         # power = eval(self.types[layer]['Power']+'()')
         latency = self.types[layer]["Latency"]
 
-        h_ips = random.randint(
-            self.types[layer]["IPS"][0], self.types[layer]["IPS"][1]
-        )
-        r_ips = random.randint(
-            self.types[layer]["IPS"][0], self.types[layer]["IPS"][1]
-        )
+        h_ips = random.randint(self.types[layer]["IPS"][0], self.types[layer]["IPS"][1])
+        r_ips = random.randint(self.types[layer]["IPS"][0], self.types[layer]["IPS"][1])
 
         h_ram = RAM(
             random.randint(
@@ -211,13 +210,12 @@ class MyFog:
         # We want to hava exactly self.num_hosts hosts!
         # Each fog has 1 to 5 edge hosts
 
-
         while hosts_counter < self.num_hosts:
-            print(hosts_counter, self.num_hosts, end='\t')
+            print(hosts_counter, self.num_hosts, end="\t")
             remaining_hosts = self.num_hosts - hosts_counter
             if remaining_hosts < 4:
                 raise Exception("Remaining hosts must be at least 4")
-            
+
             # Fog
             fog_id = hosts_counter
             f_host, f_replica = self.generateHostAndReplica("fog", fog_id, None)
@@ -226,15 +224,15 @@ class MyFog:
             hosts_counter += 2
 
             fog_ips = f_host[0]
-            fog_max_children = fog_ips//(3*2048)
+            fog_max_children = fog_ips // (3 * 2048)
             # minimum max children supported by a fog is 4 and maximum is 10
 
             # Edge
-            remaining_hosts -=2
+            remaining_hosts -= 2
             if remaining_hosts < 6:
-                n_edge = remaining_hosts//2
+                n_edge = remaining_hosts // 2
             else:
-                n_edge = random.randint(1, min(fog_max_children,remaining_hosts//2))
+                n_edge = random.randint(1, min(fog_max_children, remaining_hosts // 2))
 
             print(n_edge)
 
@@ -245,7 +243,7 @@ class MyFog:
                 hosts.append(e_host)
                 hosts.append(e_replica)
                 hosts_counter += 2
-        
+
             # if remaining hosts are less than 4, add them to the last fog
             if 0 < self.num_hosts - hosts_counter < 4:
                 if self.num_hosts - hosts_counter != 2:
@@ -256,8 +254,7 @@ class MyFog:
                 hosts.append(e_host)
                 hosts.append(e_replica)
                 hosts_counter += 2
-                
 
         self.plotTree(hosts)
-        
+
         return hosts
